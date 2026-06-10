@@ -1,4 +1,4 @@
-﻿#define LV_USE_GIF 1
+#define LV_USE_GIF 1
 // #define FACTORY_RESCUE_MODE // Factory(1MB) 빌드 시 이 주석을 해제하세요.
 #include <stdbool.h>
 #include <stdint.h>
@@ -233,7 +233,7 @@ void toggle_virtual_drive(bool enable);
 // Device / UUIDs
 // ---------------------------------------------------------------------------
 
-#define DEVICE_NAME "MOVISION HUD1"
+#define DEVICE_NAME "MOVISION_KR2"
 
 // Documented AMOLED DISPLAY UUIDs (16-bit UUIDs using Bluetooth base UUID)
 // - Service UUID: 0xFFEA  (0000ffea-0000-1000-8000-00805f9b34fb)
@@ -379,7 +379,7 @@ static void ble_mp_advertise(void);
 #define LCD_BITS_PER_PIXEL (16) // RGB565
 
 #include "board_config.h"
-#define PIN_NUM_LCD_TE (-1) // TFT_TE (not used)
+// PIN_NUM_LCD_TE is now defined in board_config.h
 
 static esp_lcd_panel_handle_t s_lcd_panel = NULL;
 static esp_lcd_panel_io_handle_t s_lcd_io_handle =
@@ -462,8 +462,8 @@ static void create_boot_ui(void);
 // Touch device handle
 static lv_indev_t *s_touch_indev = NULL;
 
-// Touch Pins (CST92xx I2C)
-#define TOUCH_I2C_ADDR 0x5A
+// Touch Pins (CST816T I2C)
+#define TOUCH_I2C_ADDR 0x15
 #define TOUCH_I2C_FREQ_HZ 100000
 
 // CST92xx Register Definitions
@@ -764,6 +764,7 @@ typedef struct {
   char image_filename[64]; // CSV: image (e.g., "camera_tt.bmp")
   uint8_t sector;          // CSV: sector (LCD 위치)
   char size[32];           // CSV: size (e.g., "150pt x 150pt")
+  uint8_t priority;        // CSV: priority (우선순위)
 } safety_data_entry_t;
 
 static image_data_entry_t *s_image_data_entries = NULL;
@@ -1360,7 +1361,7 @@ static void virtual_drive_task(void *arg) {
   ESP_LOGI("VIRT", "Virtual Drive Task Started (Log Replay Mode)");
 
   while (1) {
-    if (s_virt_drive_active && !s_connected) {
+    if (s_virt_drive_active) {
       if (f == NULL) {
         const char *log_search_paths[] = {
             "/littlefs/flash_data/merged_log.txt", "/littlefs/merged_log.txt",
@@ -2058,9 +2059,9 @@ static esp_err_t load_safety_data_csv(void) {
 
     // Extract: start(0), id(1), commend(2),
     // data_length(3), data1(4), image(11),
-    // sector(12) Safety_DRV.CSV has 13 fields
-    // (indices 0-12), no size field
-    if (field_idx < 13) {
+    // sector(12), priority(13) Safety_DRV.CSV has 14 fields
+    // (indices 0-13), no size field
+    if (field_idx < 14) {
       ESP_LOGW(TAG,
                "Safety_DRV CSV line %zu has "
                "insufficient fields (%d), "
@@ -2076,9 +2077,10 @@ static esp_err_t load_safety_data_csv(void) {
     char *data1_str = fields[4];
     char *filename_str = fields[11]; // image is at index 11
     char *sector_str = fields[12];   // sector is at index 12
+    char *priority_str = fields[13]; // priority is at index 13
 
     if (!start_str || !id_str || !commend_str || !data_length_str ||
-        !data1_str || !filename_str || !sector_str) {
+        !data1_str || !filename_str || !sector_str || !priority_str) {
       ESP_LOGW(TAG,
                "Safety_DRV CSV line %zu has "
                "NULL fields, skipping",
@@ -2101,6 +2103,8 @@ static esp_err_t load_safety_data_csv(void) {
       filename_str++;
     while (*sector_str == ' ' || *sector_str == '\t')
       sector_str++;
+    while (*priority_str == ' ' || *priority_str == '\t')
+      priority_str++;
 
     // Remove surrounding quotes from filename
     // if present
@@ -2118,8 +2122,8 @@ static esp_err_t load_safety_data_csv(void) {
     uint32_t commend = strtoul(commend_str, NULL, 16);
     uint32_t data_length = strtoul(data_length_str, NULL, 16);
     uint32_t data1 = strtoul(data1_str, NULL, 16);
-    uint32_t sector = strtoul(sector_str, NULL,
-                              10); // sector is decimal
+    uint32_t sector = strtoul(sector_str, NULL, 10); // sector is decimal
+    uint32_t priority = strtoul(priority_str, NULL, 10); // priority is decimal
 
     if (start > 255 || id > 255 || commend > 255 || data_length > 255 ||
         data1 > 255) {
@@ -2136,6 +2140,7 @@ static esp_err_t load_safety_data_csv(void) {
     s_safety_data_entries[idx].data_length = (uint8_t)data_length;
     s_safety_data_entries[idx].data1 = (uint8_t)data1;
     s_safety_data_entries[idx].sector = (uint8_t)sector;
+    s_safety_data_entries[idx].priority = (uint8_t)priority;
 
     // Copy filename
     size_t copy_len = filename_len;
@@ -2163,14 +2168,14 @@ static esp_err_t load_safety_data_csv(void) {
              "Safety_DRV CSV parsed entry %zu: "
              "start=0x%02X id=0x%02X "
              "commend=0x%02X dlen=0x%02X "
-             "data1=0x%02X -> %s (sector=%u)",
+             "data1=0x%02X -> %s (sector=%u, priority=%u)",
              idx, s_safety_data_entries[idx].start,
              s_safety_data_entries[idx].id, s_safety_data_entries[idx].commend,
              s_safety_data_entries[idx].data_length,
              s_safety_data_entries[idx].data1,
              s_safety_data_entries[idx].image_filename,
              s_safety_data_entries[idx].sector,
-             s_safety_data_entries[idx].size);
+             s_safety_data_entries[idx].priority);
 
     idx++;
   }
@@ -3015,41 +3020,57 @@ static void safety_drive(uint8_t start, uint8_t id, uint8_t commend,
      data1, data2, data3, data4, data5,
            data6); */
 
-  // data1 == 2: 외곽링을 제외한 LCD 에 표기한
-  // 모든것을 화면에 표기하지 않는다
   ESP_LOGI(TAG,
            "Safety_DRV Packet: start=0x%02X id=0x%02X cmd=0x%02X d1=0x%02X "
            "d2=0x%02X d3=0x%02X",
            start, id, commend, data1, data2, data3);
 
-  if (data1 == 0x02) {
-    ESP_LOGI(TAG, "Safety_DRV: data1=2 received, "
-                  "requesting global clear");
+  // data1 == 0: 모든 안전운행 정보를 화면에서 지운다
+  if (data1 == 0x00) {
+    ESP_LOGI(TAG, "Safety_DRV: data1=0 received, requesting clear");
     request_clear_display(0x02);
     return;
   }
 
-  // Find matching Safety_DRV entry
-  const safety_data_entry_t *entry =
-      find_safety_image_entry(start, id, commend, data_length, data1);
-  if (entry == NULL) {
-    ESP_LOGW(TAG,
-             "Safety_DRV: No matching entry for "
-             "start=0x%02X id=0x%02X "
-             "cmd=0x%02X dlen=0x%02X data1=0x%02X",
-             start, id, commend, data_length, data1);
-    return;
+  const safety_data_entry_t *best_entry = NULL;
+  uint8_t highest_priority = 255;
+
+  // data1에 포함된 비트 중 가장 우선순위가 높은 항목을 찾는다
+  for (int i = 0; i < 8; i++) {
+    uint8_t bit = (1 << i);
+    if (data1 & bit) {
+      const safety_data_entry_t *entry =
+          find_safety_image_entry(start, id, commend, data_length, bit);
+      if (entry != NULL) {
+        if (entry->priority < highest_priority) {
+          highest_priority = entry->priority;
+          best_entry = entry;
+        }
+      }
+    }
+  }
+
+  if (best_entry == NULL) {
+    // 매칭되는 비트가 없으면 기존 방식(전체 일치)으로 시도
+    best_entry = find_safety_image_entry(start, id, commend, data_length, data1);
+    if (best_entry == NULL) {
+      ESP_LOGW(TAG,
+               "Safety_DRV: No matching entry for "
+               "start=0x%02X id=0x%02X "
+               "cmd=0x%02X dlen=0x%02X data1=0x%02X",
+               start, id, commend, data_length, data1);
+      return;
+    }
   }
 
   ESP_LOGD(TAG,
-           "Safety_DRV: Found matching "
-           "entry, image=%s sector=%u",
-           entry->image_filename, entry->sector);
+           "Safety_DRV: Found best entry, image=%s sector=%u priority=%u",
+           best_entry->image_filename, best_entry->sector, best_entry->priority);
 
   // Request all updates via queue (to avoid
   // LVGL crash in BLE callback) Image, ring
-  request_safety_update(start, id, commend, data_length, data1, data2, data3,
-                        data4, data5, data6);
+  request_safety_update(start, id, commend, data_length, best_entry->data1,
+                        data2, data3, data4, data5, data6);
 }
 
 // Circle drawing function (외곽 링 GPS 상태
@@ -5388,7 +5409,7 @@ static inline uint16_t lcd_be16(uint16_t v) {
 static const uint8_t s_cmd_fe_data[] = {0x00};
 static const uint8_t s_cmd_c4_data[] = {0x80};
 static const uint8_t s_cmd_3a_data[] = {0x55};
-static const uint8_t s_cmd_36_data[] = {0x00}; // RGB order
+static const uint8_t s_cmd_36_data[] = {0xC0}; // RGB order, 180 degree rotation
 static const uint8_t s_cmd_35_data[] = {0x00};
 static const uint8_t s_cmd_53_data[] = {0x20};
 static const uint8_t s_cmd_2a_data[] = {0x00, 0x06, 0x01, 0xD7};
@@ -5807,6 +5828,9 @@ static esp_err_t lcd_init_panel(void) {
     spi_bus_free(LCD_HOST);
     return ret;
   }
+
+  // Adjust X gap by 2 pixels for 180-degree rotation (RAM width 480, active 466, offset 6 -> rotated offset 8)
+  esp_lcd_panel_set_gap(s_lcd_panel, 2, 0);
 
   ret = esp_lcd_panel_reset(s_lcd_panel);
   if (ret != ESP_OK) {
@@ -7553,7 +7577,7 @@ static void lvgl_handler_task(void *arg) {
   while (1) {
     // [Fix] 20초 타임아웃 처리: 앱 응답이 없을 때 BOOT 모드 내에서 설치 안내
     // UI만 표시
-    if (!boot_timeout_triggered && !s_app_communicated) {
+    if (!boot_timeout_triggered && !s_app_communicated && !s_virt_drive_active) {
       if ((xTaskGetTickCount() - boot_start_tick) > pdMS_TO_TICKS(10000)) {
         ESP_LOGI(TAG, "BOOT Timeout: No app communication after 10s. Showing "
                       "QR/Registration UI.");
@@ -7987,7 +8011,7 @@ static int dis_on_access(uint16_t conn_handle, uint16_t attr_handle,
                          struct ble_gatt_access_ctxt *ctxt, void *arg) {
   uint16_t uuid16 = ble_uuid_u16(ctxt->chr->uuid);
   if (uuid16 == 0x2A29) {
-    os_mbuf_append(ctxt->om, "MOVISION", 8);
+    os_mbuf_append(ctxt->om, "MOVISION_KR2", 12);
     return 0;
   } else if (uuid16 == 0x2A24) {
     os_mbuf_append(ctxt->om, "HUD1-PRO", 8);
@@ -9666,7 +9690,7 @@ static void create_setting_ui(void) {
   // --- 1. Info Texts Control (5 Rows, Centered Colon Alignment) ---
   const char *keys[] = {"모델명", "S/W 버전", "시리얼 번호", "앱등록 번호",
                         "제품 홈페이지"};
-  const char *values[] = {"MOVISION HUD1", FIRMWARE_VERSION, s_device_serial,
+  const char *values[] = {"MOVISION_KR2", FIRMWARE_VERSION, s_device_serial,
                           s_app_reg_num,
                           "https://m.smartstore.naver.com/b2broom"};
   int start_y = 5;
@@ -10103,6 +10127,15 @@ static esp_err_t init_touch(void) {
   if (ret != ESP_OK)
     return ret;
 
+  // I2C Bus Scan
+  ESP_LOGI("TOUCH", "Scanning I2C Bus...");
+  for (int addr = 1; addr < 127; addr++) {
+    if (i2c_master_probe(s_i2c_bus_handle, addr, pdMS_TO_TICKS(50)) == ESP_OK) {
+      ESP_LOGI("TOUCH", "Found I2C device at address: 0x%02X", addr);
+    }
+  }
+  ESP_LOGI("TOUCH", "I2C Bus Scan Complete.");
+
   i2c_device_config_t dev_conf = {
       .dev_addr_length = I2C_ADDR_BIT_LEN_7,
       .device_address = TOUCH_I2C_ADDR,
@@ -10138,18 +10171,12 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   static int start_y = -1;
   static bool swiped = false;
 
-  // Read buffer size: points * 5 + 5 overhead (safe size 20)
-  uint8_t read_buf[20] = {0};
-  uint8_t write_buf[3] = {0};
-
-  // Reverted INT check to polling for better sensitivity (in case of missed
-  // pulses)
-  // 1. Read Command 0xD000
-  write_buf[0] = (CST92XX_READ_COMMAND >> 8) & 0xFF;
-  write_buf[1] = CST92XX_READ_COMMAND & 0xFF;
+  // Read buffer size: 7 bytes for CST816T
+  uint8_t read_buf[7] = {0};
+  uint8_t write_buf[1] = {0x00}; // Start reading from register 0x00
 
   // Reduced timeout or silent fail to avoid log spam on occasional glich
-  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 2, read_buf,
+  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 1, read_buf,
                                   sizeof(read_buf),
                                   pdMS_TO_TICKS(50)) != ESP_OK) {
     // ESP_LOGW("TOUCH", "I2C Read Failed"); // Optional: uncomment if needed
@@ -10160,50 +10187,113 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     return;
   }
 
-  // 2. Send Handshake ACK: 0xD0 0x00 0xAB
-  write_buf[2] = CST92XX_ACK;
-  i2c_master_transmit(s_touch_dev_handle, write_buf, 3, pdMS_TO_TICKS(50));
+  // 4. Parse Data for CST816T
+  // Register 0x01: Finger Count
+  // Register 0x02: Event ID (bits 7:6) & X_High (bits 3:0)
+  // Register 0x03: X_Low
+  // Register 0x04: Y_High (bits 3:0)
+  // Register 0x05: Y_Low
+  uint8_t point_count = read_buf[1];
+  uint8_t event_id = (read_buf[2] >> 6) & 0x03;
 
-  // 3. Verify Device ACK (Index 6)
-  if (read_buf[6] != CST92XX_ACK) {
-    // ESP_LOGW("TOUCH", "Invalid ACK: 0x%02X", read_buf[6]);
-    data->state = LV_INDEV_STATE_REL;
-    start_x = -1;
-    start_y = -1;
-    swiped = false;
-    return;
-  }
+  // For CHSC6413 / CST816 variant:
+  // [2]=X_H, [3]=X_L, [5]=Y_H, [6]=Y_L
+  // [1] seems to indicate touch state (e.g. 0x05 when pressed)
+  
+  if (read_buf[1] != 0x00) { 
 
-  // 4. Parse Data
-  uint8_t point_count = read_buf[5] & 0x0F;
+    // Through raw byte analysis, we found this specific clone shifts the registers:
+    // X is at [3] and [4]
+    // Y is at [5] and [6]
+    uint16_t x = ((read_buf[3] & 0x0F) << 8) | read_buf[4];
+    uint16_t y = ((read_buf[5] & 0x0F) << 8) | read_buf[6];
 
-  if (point_count > 0 && point_count <= CST92XX_MAX_FINGER_NUM) {
-    // Parse Point 0 (Index 0..4)
-    // Structure: [id:4][pressed:4] [x_high] [y_high] [x_low:4][y_low:4]
-    uint8_t pressed = read_buf[0] & 0x0F;
-    if (pressed == 0x06 || pressed == 0x01 || pressed == 0x03) {
-      uint16_t x = ((read_buf[1] << 4) | (read_buf[3] >> 4));
-      uint16_t y = ((read_buf[2] << 4) | (read_buf[3] & 0x0F));
+    // Anti-Stuck Mechanism & Double-Tap on same spot fix
+    static uint16_t last_x = 0xFFFF;
+    static uint16_t last_y = 0xFFFF;
+    static uint8_t last_event = 0xFF;
+    static uint8_t stuck_counter = 0;
+    
+    uint8_t current_event = read_buf[3] & 0xC0; // Top 2 bits are the event flag (0x00=Down, 0x80=Contact, 0x40=Up)
+    bool is_new_touch_event = false;
 
-      data->state = LV_INDEV_STATE_PR;
-      // Flip X and Y coordinates to resolve inverted touch input
-      data->point.x = (LCD_H_RES - 1 - x);
-      data->point.y = (LCD_V_RES - 1 - y);
+    if (x == last_x && y == last_y && current_event == last_event) {
+        stuck_counter++;
+    } else {
+        stuck_counter = 0;
+        last_x = x;
+        last_y = y;
+        last_event = current_event;
+        is_new_touch_event = true;
+    }
 
-      ESP_LOGI("TOUCH", "Touch: raw_x=%d, raw_y=%d -> mapped_x=%d, mapped_y=%d",
-               x, y, (int)data->point.x, (int)data->point.y);
+    if (stuck_counter > 1) { // ~50-100ms of perfectly identical state
+        if (start_x != -1 && !swiped) {
+            ESP_LOGI("TOUCH", "[RELEASE] Start: (%d, %d) -> End: (%d, %d) | Total dx: %d, dy: %d", 
+                     start_x, start_y, last_x, last_y, (last_x - start_x), (last_y - start_y));
+        }
+        data->state = LV_INDEV_STATE_REL;
+        start_x = -1;
+        start_y = -1;
+        swiped = false;
+        // Don't reset stuck_counter to 0 here, let it stay > 1 so it keeps releasing until user physically touches again (changing X/Y/Event)
+        return; 
+    }
+
+    data->state = LV_INDEV_STATE_PR;
+    // Flip X and Y coordinates to resolve inverted touch input
+    data->point.x = (LCD_H_RES - 1 - x);
+    data->point.y = (LCD_V_RES - 1 - y);
+
+    if (is_new_touch_event) {
+        // Log every time a new distinct touch or movement happens
+        ESP_LOGI("TOUCH", "Raw Bytes: %02X %02X %02X %02X %02X %02X %02X",
+                 read_buf[0], read_buf[1], read_buf[2], read_buf[3],
+                 read_buf[4], read_buf[5], read_buf[6]);
+        ESP_LOGI("TOUCH", "Touch: raw_x=%d, raw_y=%d -> mapped_x=%d, mapped_y=%d",
+                 x, y, (int)data->point.x, (int)data->point.y);
+    }
 
       // Swipe detection
-      if (start_x == -1) {
-        start_x = x;
-        start_y = y;
-        swiped = false;
-      } else if (!swiped) {
-        int dx = x - start_x;
-        int dy = y - start_y;
+      int dx = 0;
+      int dy = 0;
+      bool do_swipe_check = false;
 
+      uint8_t gesture = read_buf[1]; // CHSC6413 clone puts Gesture ID in [1]
+
+      // Hardware gesture detected (fast swipe)
+      if (gesture == 0x01) { dy = -150; do_swipe_check = true; swiped = false; } // Up
+      else if (gesture == 0x02) { dy = 150; do_swipe_check = true; swiped = false; } // Down
+      else if (gesture == 0x03) { dx = -150; do_swipe_check = true; swiped = false; } // Left
+      else if (gesture == 0x04) { dx = 150; do_swipe_check = true; swiped = false; } // Right
+      else {
+        // gesture == 0x05 (Click) or others: fallback to coordinate-based drag tracking
+        if (start_x == -1) {
+          start_x = x;
+          start_y = y;
+          swiped = false;
+          ESP_LOGI("TOUCH", "[PRESS] Start coordinate saved: (%d, %d)", start_x, start_y);
+        } else if (!swiped) {
+          dx = x - start_x;
+          dy = y - start_y;
+          do_swipe_check = true;
+        }
+      }
+
+      if (do_swipe_check && !swiped) {
         // Horizontal Swipe (Mode Change) detection
-        if (abs(dx) > abs(dy) && abs(dx) > 40) {
+        if (abs(dx) > abs(dy) && abs(dx) > 15) {
+          ESP_LOGI("TOUCH", "========== SWIPE TRIGGERED ==========");
+          if (gesture >= 0x01 && gesture <= 0x04) {
+              ESP_LOGI("TOUCH", "Type: Hardware Fast Swipe (ID: 0x%02X)", gesture);
+              ESP_LOGI("TOUCH", "Chip reported end coord: (%d, %d)", x, y);
+          } else {
+              ESP_LOGI("TOUCH", "Type: Software Drag");
+              ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
+              ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
+          }
+          ESP_LOGI("TOUCH", "=====================================");
+
           // [User Request] Ignore ALL touch inputs in Virtual Drive mode
           if (s_virt_drive_active) {
             ESP_LOGI("TOUCH", "Horizontal touch ignored in Virtual Drive mode");
@@ -10269,7 +10359,7 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
           }
         }
         // Vertical Swipe
-        else if (abs(dy) > abs(dx) && abs(dy) > 60) {
+        else if (abs(dy) > abs(dx) && abs(dy) > 30) {
           // [User Request] Ignore touch inputs in Virtual Drive mode
           if (s_virt_drive_active) {
             ESP_LOGI("TOUCH", "Vertical touch ignored in Virtual Drive mode");
@@ -10331,7 +10421,6 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
       }
       return;
     }
-  }
 
   // No valid touch
   data->state = LV_INDEV_STATE_REL;
@@ -10425,6 +10514,7 @@ void app_main(void) {
   esp_log_level_set("WIFI_OTA", ESP_LOG_INFO);
   esp_log_level_set("OTA_SD", ESP_LOG_INFO); // Enable OTA logs
   esp_log_level_set("TOUCH", ESP_LOG_INFO);
+  esp_log_level_set("VIRT", ESP_LOG_INFO); // Enable Virtual Drive logs
   esp_log_level_set("IMG_TRANSFER",
                     ESP_LOG_INFO); // 이미지 전송 디버그 로그 활성화
   esp_log_level_set(
@@ -10782,7 +10872,12 @@ void app_main(void) {
   if (!s_hud_seen_first_cmd) {
     ESP_LOGI(TAG, "Intro playback finished. Waiting for App command before "
                   "moving from BOOT mode...");
+    uint32_t wait_start = xTaskGetTickCount();
     while (!s_hud_seen_first_cmd) {
+      if ((xTaskGetTickCount() - wait_start) * portTICK_PERIOD_MS >= 2000) {
+        ESP_LOGI(TAG, "2 seconds elapsed without app command. Proceeding in BOOT mode.");
+        break;
+      }
       vTaskDelay(pdMS_TO_TICKS(100));
     }
   }

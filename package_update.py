@@ -28,7 +28,7 @@ def package(board_name="hd1"):
         (os.path.join(build_dir, "bootloader", "bootloader.bin"), "bootloader.bin"),
         (os.path.join(build_dir, "partition_table", "partition-table.bin"), "partition-table.bin"),
         (os.path.join(build_dir, "ota_data_initial.bin"), "ota_data_initial.bin"),
-        (os.path.join(build_dir, "movision_mp.bin"), "movision.bin"),
+        (os.path.join(build_dir, "movision_kr.bin"), "movision.bin"),
         (os.path.join(build_dir, "storage.bin"), "storage.bin"),
     ]
 
