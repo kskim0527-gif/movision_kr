@@ -462,8 +462,8 @@ static void create_boot_ui(void);
 // Touch device handle
 static lv_indev_t *s_touch_indev = NULL;
 
-// Touch Pins (CST816T I2C)
-#define TOUCH_I2C_ADDR 0x15
+// Touch Pins (CST92xx I2C)
+#define TOUCH_I2C_ADDR 0x5A
 #define TOUCH_I2C_FREQ_HZ 100000
 
 // CST92xx Register Definitions
@@ -10171,12 +10171,18 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   static int start_y = -1;
   static bool swiped = false;
 
-  // Read buffer size: 7 bytes for CST816T
-  uint8_t read_buf[7] = {0};
-  uint8_t write_buf[1] = {0x00}; // Start reading from register 0x00
+  // Read buffer size: points * 5 + 5 overhead (safe size 20)
+  uint8_t read_buf[20] = {0};
+  uint8_t write_buf[3] = {0};
+
+  // Reverted INT check to polling for better sensitivity (in case of missed
+  // pulses)
+  // 1. Read Command 0xD000
+  write_buf[0] = (CST92XX_READ_COMMAND >> 8) & 0xFF;
+  write_buf[1] = CST92XX_READ_COMMAND & 0xFF;
 
   // Reduced timeout or silent fail to avoid log spam on occasional glich
-  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 1, read_buf,
+  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 2, read_buf,
                                   sizeof(read_buf),
                                   pdMS_TO_TICKS(50)) != ESP_OK) {
     // ESP_LOGW("TOUCH", "I2C Read Failed"); // Optional: uncomment if needed
@@ -10187,111 +10193,51 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     return;
   }
 
-  // 4. Parse Data for CST816T
-  // Register 0x01: Finger Count
-  // Register 0x02: Event ID (bits 7:6) & X_High (bits 3:0)
-  // Register 0x03: X_Low
-  // Register 0x04: Y_High (bits 3:0)
-  // Register 0x05: Y_Low
-  uint8_t point_count = read_buf[1];
-  uint8_t event_id = (read_buf[2] >> 6) & 0x03;
+  // 2. Send Handshake ACK: 0xD0 0x00 0xAB
+  write_buf[2] = CST92XX_ACK;
+  i2c_master_transmit(s_touch_dev_handle, write_buf, 3, pdMS_TO_TICKS(50));
 
-  // For CHSC6413 / CST816 variant:
-  // [2]=X_H, [3]=X_L, [5]=Y_H, [6]=Y_L
-  // [1] seems to indicate touch state (e.g. 0x05 when pressed)
-  
-  if (read_buf[1] != 0x00) { 
+  // 3. Verify Device ACK (Index 6)
+  if (read_buf[6] != CST92XX_ACK) {
+    // ESP_LOGW("TOUCH", "Invalid ACK: 0x%02X", read_buf[6]);
+    data->state = LV_INDEV_STATE_REL;
+    start_x = -1;
+    start_y = -1;
+    swiped = false;
+    return;
+  }
 
-    // Through raw byte analysis, we found this specific clone shifts the registers:
-    // X is at [3] and [4]
-    // Y is at [5] and [6]
-    uint16_t x = ((read_buf[3] & 0x0F) << 8) | read_buf[4];
-    uint16_t y = ((read_buf[5] & 0x0F) << 8) | read_buf[6];
+  // 4. Parse Data
+  uint8_t point_count = read_buf[5] & 0x0F;
 
-    // Anti-Stuck Mechanism & Double-Tap on same spot fix
-    static uint16_t last_x = 0xFFFF;
-    static uint16_t last_y = 0xFFFF;
-    static uint8_t last_event = 0xFF;
-    static uint8_t stuck_counter = 0;
-    
-    uint8_t current_event = read_buf[3] & 0xC0; // Top 2 bits are the event flag (0x00=Down, 0x80=Contact, 0x40=Up)
-    bool is_new_touch_event = false;
+  if (point_count > 0 && point_count <= CST92XX_MAX_FINGER_NUM) {
+    // Parse Point 0 (Index 0..4)
+    // Structure: [id:4][pressed:4] [x_high] [y_high] [x_low:4][y_low:4]
+    uint8_t pressed = read_buf[0] & 0x0F;
+    if (pressed == 0x06 || pressed == 0x01 || pressed == 0x03) {
+      uint16_t x = ((read_buf[1] << 4) | (read_buf[3] >> 4));
+      uint16_t y = ((read_buf[2] << 4) | (read_buf[3] & 0x0F));
 
-    if (x == last_x && y == last_y && current_event == last_event) {
-        stuck_counter++;
-    } else {
-        stuck_counter = 0;
-        last_x = x;
-        last_y = y;
-        last_event = current_event;
-        is_new_touch_event = true;
-    }
+      data->state = LV_INDEV_STATE_PR;
+      // Flip X and Y coordinates to resolve inverted touch input
+      data->point.x = (LCD_H_RES - 1 - x);
+      data->point.y = y;
 
-    if (stuck_counter > 1) { // ~50-100ms of perfectly identical state
-        if (start_x != -1 && !swiped) {
-            ESP_LOGI("TOUCH", "[RELEASE] Start: (%d, %d) -> End: (%d, %d) | Total dx: %d, dy: %d", 
-                     start_x, start_y, last_x, last_y, (last_x - start_x), (last_y - start_y));
-        }
-        data->state = LV_INDEV_STATE_REL;
-        start_x = -1;
-        start_y = -1;
+      if (start_x == -1) {
+        start_x = x;
+        start_y = y;
         swiped = false;
-        // Don't reset stuck_counter to 0 here, let it stay > 1 so it keeps releasing until user physically touches again (changing X/Y/Event)
-        return; 
-    }
+        ESP_LOGI("TOUCH", "[PRESS] Start coordinate saved: (%d, %d)", start_x, start_y);
+      } else if (!swiped) {
+        int dx = x - start_x;
+        int dy = y - start_y;
 
-    data->state = LV_INDEV_STATE_PR;
-    // Flip X and Y coordinates to resolve inverted touch input
-    data->point.x = (LCD_H_RES - 1 - x);
-    data->point.y = (LCD_V_RES - 1 - y);
-
-    if (is_new_touch_event) {
-        // Log every time a new distinct touch or movement happens
-        ESP_LOGI("TOUCH", "Raw Bytes: %02X %02X %02X %02X %02X %02X %02X",
-                 read_buf[0], read_buf[1], read_buf[2], read_buf[3],
-                 read_buf[4], read_buf[5], read_buf[6]);
-        ESP_LOGI("TOUCH", "Touch: raw_x=%d, raw_y=%d -> mapped_x=%d, mapped_y=%d",
-                 x, y, (int)data->point.x, (int)data->point.y);
-    }
-
-      // Swipe detection
-      int dx = 0;
-      int dy = 0;
-      bool do_swipe_check = false;
-
-      uint8_t gesture = read_buf[1]; // CHSC6413 clone puts Gesture ID in [1]
-
-      // Hardware gesture detected (fast swipe)
-      if (gesture == 0x01) { dy = -150; do_swipe_check = true; swiped = false; } // Up
-      else if (gesture == 0x02) { dy = 150; do_swipe_check = true; swiped = false; } // Down
-      else if (gesture == 0x03) { dx = -150; do_swipe_check = true; swiped = false; } // Left
-      else if (gesture == 0x04) { dx = 150; do_swipe_check = true; swiped = false; } // Right
-      else {
-        // gesture == 0x05 (Click) or others: fallback to coordinate-based drag tracking
-        if (start_x == -1) {
-          start_x = x;
-          start_y = y;
-          swiped = false;
-          ESP_LOGI("TOUCH", "[PRESS] Start coordinate saved: (%d, %d)", start_x, start_y);
-        } else if (!swiped) {
-          dx = x - start_x;
-          dy = y - start_y;
-          do_swipe_check = true;
-        }
-      }
-
-      if (do_swipe_check && !swiped) {
         // Horizontal Swipe (Mode Change) detection
         if (abs(dx) > abs(dy) && abs(dx) > 15) {
           ESP_LOGI("TOUCH", "========== SWIPE TRIGGERED ==========");
-          if (gesture >= 0x01 && gesture <= 0x04) {
-              ESP_LOGI("TOUCH", "Type: Hardware Fast Swipe (ID: 0x%02X)", gesture);
-              ESP_LOGI("TOUCH", "Chip reported end coord: (%d, %d)", x, y);
-          } else {
-              ESP_LOGI("TOUCH", "Type: Software Drag");
-              ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
-              ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
-          }
+          ESP_LOGI("TOUCH", "Type: Software Drag");
+          ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
+          ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
           ESP_LOGI("TOUCH", "=====================================");
 
           // [User Request] Ignore ALL touch inputs in Virtual Drive mode
@@ -10303,106 +10249,66 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
             // OTA 모드에서는 가로 스와이프 무시 (실수 방지)
             if (s_current_mode == DISPLAY_MODE_OTA) {
               swiped = true; // 다산, 메세지만 더이상 발생 안 함
-              // nothing
             } else {
-              // OTA는 실수 방지를 위해 스와이프 순환에서 제외
-              // 우→좌(Next):
-              // Horizontal Swipe Loop: GUIDE <-> CLOCK <-> ALBUM <-> SETTING
               int next_mode;
               if (dx > 0) { // Right to Left (Next)
                 switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE:
-                  next_mode = DISPLAY_MODE_CLOCK;
-                  break;
-                case DISPLAY_MODE_CLOCK:
-                  next_mode = DISPLAY_MODE_ALBUM;
-                  break;
-                case DISPLAY_MODE_ALBUM:
-                  next_mode = DISPLAY_MODE_SETTING;
-                  break;
-                case DISPLAY_MODE_SETTING:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
-                default:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
+                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_CLOCK; break;
+                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_ALBUM; break;
+                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_SETTING; break;
+                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_GUIDE; break;
+                default: next_mode = DISPLAY_MODE_GUIDE; break;
                 }
               } else { // Left to Right (Prev)
                 switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE:
-                  next_mode = DISPLAY_MODE_SETTING;
-                  break;
-                case DISPLAY_MODE_SETTING:
-                  next_mode = DISPLAY_MODE_ALBUM;
-                  break;
-                case DISPLAY_MODE_ALBUM:
-                  next_mode = DISPLAY_MODE_CLOCK;
-                  break;
-                case DISPLAY_MODE_CLOCK:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
-                default:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
+                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_SETTING; break;
+                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_ALBUM; break;
+                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_CLOCK; break;
+                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_GUIDE; break;
+                default: next_mode = DISPLAY_MODE_GUIDE; break;
                 }
               }
 
-              if (next_mode == DISPLAY_MODE_ALBUM &&
-                  s_current_mode != DISPLAY_MODE_ALBUM) {
+              if (next_mode == DISPLAY_MODE_ALBUM && s_current_mode != DISPLAY_MODE_ALBUM) {
                 reset_album_to_default_image();
               }
               s_is_manual_mode_switch = true;
               switch_display_mode(next_mode);
               s_is_manual_mode_switch = false;
               swiped = true;
-            } // end else (not OTA)
+            }
           }
         }
         // Vertical Swipe
         else if (abs(dy) > abs(dx) && abs(dy) > 30) {
-          // [User Request] Ignore touch inputs in Virtual Drive mode
           if (s_virt_drive_active) {
             ESP_LOGI("TOUCH", "Vertical touch ignored in Virtual Drive mode");
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_GUIDE) {
-            // [Integrated] Disable vertical swipe in Guide Mode to prevent
-            // accidental changes while driving
             ESP_LOGI("TOUCH", "Vertical swipe disabled in GUIDE mode");
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_ALBUM) {
-            // Album Image Change
-            if (dy < 0)
-              load_image_from_sd(1);
-            else {
-              load_image_from_sd(-1);
-            }
+            if (dy < 0) load_image_from_sd(1);
+            else load_image_from_sd(-1);
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
-            // Toggle between Clock 1 and Clock 2
             s_clock_option = (s_clock_option == 0) ? 1 : 0;
-            ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d",
-                     s_clock_option);
+            ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d", s_clock_option);
             s_is_manual_mode_switch = true;
             switch_display_mode(DISPLAY_MODE_CLOCK);
             s_is_manual_mode_switch = false;
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_BOOT) {
-            // [Secret Trigger] 5 vertical swipes in 10s enters Virtual Drive
             uint32_t now = xTaskGetTickCount();
-            if (s_secret_swipe_count == 0 ||
-                (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
+            if (s_secret_swipe_count == 0 || (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
               s_secret_swipe_count = 1;
               s_secret_swipe_start_tick = now;
-              ESP_LOGI(
-                  "TOUCH",
-                  "Secret Trigger: Swipe 1/5 detected (10s timer started)");
+              ESP_LOGI("TOUCH", "Secret Trigger: Swipe 1/5 detected (10s timer started)");
             } else {
               s_secret_swipe_count++;
-              ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected",
-                       s_secret_swipe_count);
+              ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected", s_secret_swipe_count);
               if (s_secret_swipe_count >= 5) {
-                ESP_LOGW("TOUCH",
-                         "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
+                ESP_LOGW("TOUCH", "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
                 toggle_virtual_drive(true);
                 s_secret_swipe_count = 0;
               }
@@ -10421,6 +10327,7 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
       }
       return;
     }
+  }
 
   // No valid touch
   data->state = LV_INDEV_STATE_REL;
