@@ -233,7 +233,7 @@ void toggle_virtual_drive(bool enable);
 // Device / UUIDs
 // ---------------------------------------------------------------------------
 
-#define DEVICE_NAME "MOVISION_KR2"
+#define DEVICE_NAME "MOVISION HUD1"
 
 // Documented AMOLED DISPLAY UUIDs (16-bit UUIDs using Bluetooth base UUID)
 // - Service UUID: 0xFFEA  (0000ffea-0000-1000-8000-00805f9b34fb)
@@ -268,8 +268,7 @@ static bool s_need_fast_conn = false;
 static bool s_time_initialized = false;
 static bool s_boot_clock_trigger = false;
 static bool s_hud_notify_enabled = false;
-static int s_time_req_count = 0;
-static TickType_t s_last_time_req_tick = 0;
+
 
 static bool s_hud_seen_first_cmd = false;
 static bool s_app_communicated =
@@ -728,6 +727,7 @@ static bool s_logging_enabled = false; // 시간 데이터 수신 후 로깅 시
 #define MAX_IMAGE_FILES 200
 static char s_image_files[MAX_IMAGE_FILES][280] EXT_RAM_BSS_ATTR; // Image paths
 int s_image_count = 0;
+static bool s_album_scanned = false;
 int s_current_image_index = 0;
 bool s_img_transfer_finished_flag = false; // 이미지 전송 완료 비동기 처리용
 bool s_img_transfer_active = false;        // 이미지 전송 중 여부
@@ -6084,6 +6084,9 @@ static esp_err_t lvgl_init(void) {
     indev_drv.gesture_limit = 30; // 픽셀 이동 기준 감도 향상
     indev_drv.gesture_min_velocity = 10;
     s_touch_indev = lv_indev_drv_register(&indev_drv);
+    if (s_touch_indev && s_touch_indev->driver && s_touch_indev->driver->read_timer) {
+        lv_timer_pause(s_touch_indev->driver->read_timer);
+    }
   }
 
   // Create UI for Clock and Album modes (background ready)
@@ -6642,7 +6645,7 @@ static void update_display_mode_ui(display_mode_t mode) {
     break;
 
   case DISPLAY_MODE_ALBUM:
-    if (s_image_count == 0)
+    if (!s_album_scanned)
       scan_intro_images();
 
     if (s_image_count > 0) {
@@ -6684,7 +6687,7 @@ static void update_display_mode_ui(display_mode_t mode) {
       }
     }
 
-    lv_scr_load_anim(s_album_screen, LV_SCR_LOAD_ANIM_FADE_ON, 50, 0, false);
+    lv_scr_load(s_album_screen);
     break;
 
   case DISPLAY_MODE_SETTING:
@@ -9814,6 +9817,7 @@ static void create_ota_ui(void) {
 
 static void scan_intro_images(void) {
   s_image_count = 0;
+  s_album_scanned = true;
   ESP_LOGI(TAG, "Album: Scanning for album1~5.jpg in /littlefs/Photo...");
 
   for (int i = 1; i <= 5; i++) {
@@ -9974,7 +9978,7 @@ void update_img_transfer_ui(int percent, bool finished) {
 }
 
 static void reset_album_to_default_image(void) {
-  if (s_image_count == 0) {
+  if (!s_album_scanned) {
     scan_intro_images();
     if (s_image_count == 0)
       return;
@@ -10032,7 +10036,7 @@ void load_image_from_sd(int direction) {
   s_album_auto_timer = 0;
 
   // If no images scannned yet (or count 0), try scanning
-  if (s_image_count == 0) {
+  if (!s_album_scanned) {
     scan_intro_images();
     if (s_image_count == 0) {
       LVGL_UNLOCK();
@@ -10113,6 +10117,31 @@ void load_image_from_sd(int direction) {
 // ---------------------------------------------------------------------------
 static i2c_master_bus_handle_t s_i2c_bus_handle = NULL;
 static i2c_master_dev_handle_t s_touch_dev_handle = NULL;
+static SemaphoreHandle_t s_touch_sem = NULL;
+
+static void IRAM_ATTR touch_isr_handler(void *arg) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(s_touch_sem, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static void touch_task(void *pvParameter) {
+    while(1) {
+        if (xSemaphoreTake(s_touch_sem, portMAX_DELAY) == pdTRUE) {
+            if (s_touch_indev) {
+                LVGL_LOCK();
+                if (s_touch_indev->driver && s_touch_indev->driver->read_timer) {
+                    lv_indev_read_timer_cb(s_touch_indev->driver->read_timer);
+                }
+                LVGL_UNLOCK();
+            }
+            vTaskDelay(pdMS_TO_TICKS(10)); // Debounce / rate limit
+        }
+    }
+}
+
 
 static esp_err_t init_touch(void) {
   i2c_master_bus_config_t i2c_bus_conf = {
@@ -10159,8 +10188,42 @@ static esp_err_t init_touch(void) {
                                  .pin_bit_mask = 1ULL << PIN_TOUCH_INT,
                                  .pull_up_en = GPIO_PULLUP_ENABLE,
                                  .pull_down_en = GPIO_PULLDOWN_DISABLE,
-                                 .intr_type = GPIO_INTR_DISABLE};
+                                 .intr_type = GPIO_INTR_NEGEDGE};
   gpio_config(&int_gpio_conf);
+
+  esp_err_t isr_err = gpio_install_isr_service(0);
+  if (isr_err != ESP_OK && isr_err != ESP_ERR_INVALID_STATE) {
+      ESP_LOGE("TOUCH", "Failed to install GPIO ISR service: %d", isr_err);
+  }
+  
+  s_touch_sem = xSemaphoreCreateBinary();
+  gpio_isr_handler_add(PIN_TOUCH_INT, touch_isr_handler, NULL);
+  xTaskCreatePinnedToCore(touch_task, "touch_task", 4096, NULL, 5, NULL, 1);
+
+
+  // [CST816T Register Configuration for Better Swipe Detection]
+  // 0xEC (Motion Mask): Bit2=EnConLR, Bit1=EnConUD -> IC reports continuous
+  // coordinates while finger is moving, enabling software swipe tracking.
+  // 0xFA (IRQ_CTL): 0x71 = Periodic interrupt when finger on screen (Touch mode)
+  // This allows polling to read intermediate positions during a swipe.
+  vTaskDelay(pdMS_TO_TICKS(50)); // Wait for IC to stabilize after reset
+
+  // Helper lambda-style: write one register via I2C
+  // [reg_addr, value]
+  const uint8_t cfg[][2] = {
+    {0xEC, 0x07}, // Motion Mask: Enable Continuous LR + UD scroll + DClick
+    {0xFA, 0x71}, // IRQ_CTL: Periodic interrupt every 10ms while touched
+    {0xFE, 0xFF}, // Auto Sleep Time: Max (255s) to prevent missing fast swipes
+  };
+  for (int i = 0; i < (int)(sizeof(cfg) / sizeof(cfg[0])); i++) {
+    uint8_t buf[2] = {cfg[i][0], cfg[i][1]};
+    esp_err_t wr = i2c_master_transmit(s_touch_dev_handle, buf, 2, pdMS_TO_TICKS(50));
+    if (wr == ESP_OK) {
+      ESP_LOGI("TOUCH", "IC Reg 0x%02X = 0x%02X OK", cfg[i][0], cfg[i][1]);
+    } else {
+      ESP_LOGW("TOUCH", "IC Reg 0x%02X write FAIL (err=%d) - will still work", cfg[i][0], wr);
+    }
+  }
 
   ESP_LOGI(TAG, "Touch initialization successful");
   return ESP_OK;
@@ -10170,6 +10233,10 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   static int start_x = -1;
   static int start_y = -1;
   static bool swiped = false;
+  static uint16_t last_x = 0xFFFF;
+  static uint16_t last_y = 0xFFFF;
+  static uint8_t last_event = 0xFF;
+
 
   // Read buffer size: points * 5 + 5 overhead (safe size 20)
   uint8_t read_buf[20] = {0};
@@ -10329,11 +10396,29 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     }
   }
 
-  // No valid touch
+  // No valid touch (Clean Release)
+  if (start_x != -1 && !swiped) {
+      int final_dx = last_x - start_x;
+      int final_dy = last_y - start_y;
+      // ESP_LOGI("TOUCH", "[CLEAN_RELEASE] Start: (%d, %d) -> End: (%d, %d) | Total dx: %d, dy: %d", 
+      //          start_x, start_y, last_x, last_y, final_dx, final_dy);
+      
+      if (abs(final_dx) <= 15 && abs(final_dy) <= 30) {
+           // ESP_LOGI("TOUCH", "[SWIPE_FAIL] Distance too short. Recognized as single touch (Tap).");
+      } else {
+           // ESP_LOGI("TOUCH", "[SWIPE_FAIL] Distance sufficient, but did not match strict swipe direction.");
+      }
+  }
+
   data->state = LV_INDEV_STATE_REL;
   start_x = -1;
   start_y = -1;
   swiped = false;
+  // 릴리즈 시 last_x/y/event 초기화 (다음 터치를 새 이벤트로 인식)
+  last_x = 0xFFFF;
+  last_y = 0xFFFF;
+  last_event = 0xFF;
+
 }
 
 static void show_restart_msg(void) {
@@ -10908,6 +10993,7 @@ void app_main(void) {
     // 이미지 전송 완료 비동기 처리 (BLE 태스크 블로킹 방지)
     if (s_img_transfer_finished_flag) {
       s_img_transfer_finished_flag = false;
+      s_album_scanned = false; // 강제 재스캔 플래그 설정
       ESP_LOGI(TAG, "Main Task: Cleaning up image transfer UI...");
       update_img_transfer_ui(100, true);
     }
