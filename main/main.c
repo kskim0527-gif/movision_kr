@@ -10232,14 +10232,9 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
         // Horizontal Swipe (Mode Change) detection
         if (abs(dx) > abs(dy) && abs(dx) > 15) {
           ESP_LOGI("TOUCH", "========== SWIPE TRIGGERED ==========");
-          if (gesture >= 0x01 && gesture <= 0x04) {
-              ESP_LOGI("TOUCH", "Type: Hardware Fast Swipe (ID: 0x%02X)", gesture);
-              ESP_LOGI("TOUCH", "Chip reported end coord: (%d, %d)", x, y);
-          } else {
-              ESP_LOGI("TOUCH", "Type: Software Drag");
-              ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
-              ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
-          }
+          ESP_LOGI("TOUCH", "Type: Software Drag");
+          ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
+          ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
           ESP_LOGI("TOUCH", "=====================================");
 
           // [User Request] Ignore ALL touch inputs in Virtual Drive mode
@@ -10251,106 +10246,66 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
             // OTA 모드에서는 가로 스와이프 무시 (실수 방지)
             if (s_current_mode == DISPLAY_MODE_OTA) {
               swiped = true; // 다산, 메세지만 더이상 발생 안 함
-              // nothing
             } else {
-              // OTA는 실수 방지를 위해 스와이프 순환에서 제외
-              // 우→좌(Next):
-              // Horizontal Swipe Loop: GUIDE <-> CLOCK <-> ALBUM <-> SETTING
               int next_mode;
               if (dx > 0) { // Right to Left (Next)
                 switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE:
-                  next_mode = DISPLAY_MODE_CLOCK;
-                  break;
-                case DISPLAY_MODE_CLOCK:
-                  next_mode = DISPLAY_MODE_ALBUM;
-                  break;
-                case DISPLAY_MODE_ALBUM:
-                  next_mode = DISPLAY_MODE_SETTING;
-                  break;
-                case DISPLAY_MODE_SETTING:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
-                default:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
+                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_CLOCK; break;
+                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_ALBUM; break;
+                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_SETTING; break;
+                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_GUIDE; break;
+                default: next_mode = DISPLAY_MODE_GUIDE; break;
                 }
               } else { // Left to Right (Prev)
                 switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE:
-                  next_mode = DISPLAY_MODE_SETTING;
-                  break;
-                case DISPLAY_MODE_SETTING:
-                  next_mode = DISPLAY_MODE_ALBUM;
-                  break;
-                case DISPLAY_MODE_ALBUM:
-                  next_mode = DISPLAY_MODE_CLOCK;
-                  break;
-                case DISPLAY_MODE_CLOCK:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
-                default:
-                  next_mode = DISPLAY_MODE_GUIDE;
-                  break;
+                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_SETTING; break;
+                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_ALBUM; break;
+                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_CLOCK; break;
+                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_GUIDE; break;
+                default: next_mode = DISPLAY_MODE_GUIDE; break;
                 }
               }
 
-              if (next_mode == DISPLAY_MODE_ALBUM &&
-                  s_current_mode != DISPLAY_MODE_ALBUM) {
+              if (next_mode == DISPLAY_MODE_ALBUM && s_current_mode != DISPLAY_MODE_ALBUM) {
                 reset_album_to_default_image();
               }
               s_is_manual_mode_switch = true;
               switch_display_mode(next_mode);
               s_is_manual_mode_switch = false;
               swiped = true;
-            } // end else (not OTA)
+            }
           }
         }
         // Vertical Swipe
         else if (abs(dy) > abs(dx) && abs(dy) > 30) {
-          // [User Request] Ignore touch inputs in Virtual Drive mode
           if (s_virt_drive_active) {
             ESP_LOGI("TOUCH", "Vertical touch ignored in Virtual Drive mode");
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_GUIDE) {
-            // [Integrated] Disable vertical swipe in Guide Mode to prevent
-            // accidental changes while driving
             ESP_LOGI("TOUCH", "Vertical swipe disabled in GUIDE mode");
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_ALBUM) {
-            // Album Image Change
-            if (dy < 0)
-              load_image_from_sd(1);
-            else {
-              load_image_from_sd(-1);
-            }
+            if (dy < 0) load_image_from_sd(1);
+            else load_image_from_sd(-1);
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
-            // Toggle between Clock 1 and Clock 2
             s_clock_option = (s_clock_option == 0) ? 1 : 0;
-            ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d",
-                     s_clock_option);
+            ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d", s_clock_option);
             s_is_manual_mode_switch = true;
             switch_display_mode(DISPLAY_MODE_CLOCK);
             s_is_manual_mode_switch = false;
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_BOOT) {
-            // [Secret Trigger] 5 vertical swipes in 10s enters Virtual Drive
             uint32_t now = xTaskGetTickCount();
-            if (s_secret_swipe_count == 0 ||
-                (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
+            if (s_secret_swipe_count == 0 || (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
               s_secret_swipe_count = 1;
               s_secret_swipe_start_tick = now;
-              ESP_LOGI(
-                  "TOUCH",
-                  "Secret Trigger: Swipe 1/5 detected (10s timer started)");
+              ESP_LOGI("TOUCH", "Secret Trigger: Swipe 1/5 detected (10s timer started)");
             } else {
               s_secret_swipe_count++;
-              ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected",
-                       s_secret_swipe_count);
+              ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected", s_secret_swipe_count);
               if (s_secret_swipe_count >= 5) {
-                ESP_LOGW("TOUCH",
-                         "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
+                ESP_LOGW("TOUCH", "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
                 toggle_virtual_drive(true);
                 s_secret_swipe_count = 0;
               }
