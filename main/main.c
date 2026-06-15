@@ -461,8 +461,8 @@ static void create_boot_ui(void);
 // Touch device handle
 static lv_indev_t *s_touch_indev = NULL;
 
-// Touch Pins (CST816T I2C)
-#define TOUCH_I2C_ADDR 0x15
+// Touch Pins (CST92xx I2C)
+#define TOUCH_I2C_ADDR 0x5A
 #define TOUCH_I2C_FREQ_HZ 100000
 
 // CST92xx Register Definitions
@@ -6084,9 +6084,6 @@ static esp_err_t lvgl_init(void) {
     indev_drv.gesture_limit = 30; // 픽셀 이동 기준 감도 향상
     indev_drv.gesture_min_velocity = 10;
     s_touch_indev = lv_indev_drv_register(&indev_drv);
-    if (s_touch_indev && s_touch_indev->driver && s_touch_indev->driver->read_timer) {
-        lv_timer_pause(s_touch_indev->driver->read_timer);
-    }
   }
 
   // Create UI for Clock and Album modes (background ready)
@@ -10117,31 +10114,6 @@ void load_image_from_sd(int direction) {
 // ---------------------------------------------------------------------------
 static i2c_master_bus_handle_t s_i2c_bus_handle = NULL;
 static i2c_master_dev_handle_t s_touch_dev_handle = NULL;
-static SemaphoreHandle_t s_touch_sem = NULL;
-
-static void IRAM_ATTR touch_isr_handler(void *arg) {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(s_touch_sem, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken) {
-        portYIELD_FROM_ISR();
-    }
-}
-
-static void touch_task(void *pvParameter) {
-    while(1) {
-        if (xSemaphoreTake(s_touch_sem, portMAX_DELAY) == pdTRUE) {
-            if (s_touch_indev) {
-                LVGL_LOCK();
-                if (s_touch_indev->driver && s_touch_indev->driver->read_timer) {
-                    lv_indev_read_timer_cb(s_touch_indev->driver->read_timer);
-                }
-                LVGL_UNLOCK();
-            }
-            vTaskDelay(pdMS_TO_TICKS(10)); // Debounce / rate limit
-        }
-    }
-}
-
 
 static esp_err_t init_touch(void) {
   i2c_master_bus_config_t i2c_bus_conf = {
@@ -10155,15 +10127,6 @@ static esp_err_t init_touch(void) {
   esp_err_t ret = i2c_new_master_bus(&i2c_bus_conf, &s_i2c_bus_handle);
   if (ret != ESP_OK)
     return ret;
-
-  // I2C Bus Scan
-  ESP_LOGI("TOUCH", "Scanning I2C Bus...");
-  for (int addr = 1; addr < 127; addr++) {
-    if (i2c_master_probe(s_i2c_bus_handle, addr, pdMS_TO_TICKS(50)) == ESP_OK) {
-      ESP_LOGI("TOUCH", "Found I2C device at address: 0x%02X", addr);
-    }
-  }
-  ESP_LOGI("TOUCH", "I2C Bus Scan Complete.");
 
   i2c_device_config_t dev_conf = {
       .dev_addr_length = I2C_ADDR_BIT_LEN_7,
@@ -10183,49 +10146,15 @@ static esp_err_t init_touch(void) {
   gpio_set_level(PIN_TOUCH_RST, 1);
   vTaskDelay(pdMS_TO_TICKS(100));
 
-  // Configure Touch INT pin as input
+  // Configure Touch INT pin as input (Polling mode for CST92xx)
   gpio_config_t int_gpio_conf = {.mode = GPIO_MODE_INPUT,
                                  .pin_bit_mask = 1ULL << PIN_TOUCH_INT,
                                  .pull_up_en = GPIO_PULLUP_ENABLE,
                                  .pull_down_en = GPIO_PULLDOWN_DISABLE,
-                                 .intr_type = GPIO_INTR_NEGEDGE};
+                                 .intr_type = GPIO_INTR_DISABLE};
   gpio_config(&int_gpio_conf);
 
-  esp_err_t isr_err = gpio_install_isr_service(0);
-  if (isr_err != ESP_OK && isr_err != ESP_ERR_INVALID_STATE) {
-      ESP_LOGE("TOUCH", "Failed to install GPIO ISR service: %d", isr_err);
-  }
-  
-  s_touch_sem = xSemaphoreCreateBinary();
-  gpio_isr_handler_add(PIN_TOUCH_INT, touch_isr_handler, NULL);
-  xTaskCreatePinnedToCore(touch_task, "touch_task", 4096, NULL, 5, NULL, 1);
-
-
-  // [CST816T Register Configuration for Better Swipe Detection]
-  // 0xEC (Motion Mask): Bit2=EnConLR, Bit1=EnConUD -> IC reports continuous
-  // coordinates while finger is moving, enabling software swipe tracking.
-  // 0xFA (IRQ_CTL): 0x71 = Periodic interrupt when finger on screen (Touch mode)
-  // This allows polling to read intermediate positions during a swipe.
-  vTaskDelay(pdMS_TO_TICKS(50)); // Wait for IC to stabilize after reset
-
-  // Helper lambda-style: write one register via I2C
-  // [reg_addr, value]
-  const uint8_t cfg[][2] = {
-    {0xEC, 0x07}, // Motion Mask: Enable Continuous LR + UD scroll + DClick
-    {0xFA, 0x71}, // IRQ_CTL: Periodic interrupt every 10ms while touched
-    {0xFE, 0xFF}, // Auto Sleep Time: Max (255s) to prevent missing fast swipes
-  };
-  for (int i = 0; i < (int)(sizeof(cfg) / sizeof(cfg[0])); i++) {
-    uint8_t buf[2] = {cfg[i][0], cfg[i][1]};
-    esp_err_t wr = i2c_master_transmit(s_touch_dev_handle, buf, 2, pdMS_TO_TICKS(50));
-    if (wr == ESP_OK) {
-      ESP_LOGI("TOUCH", "IC Reg 0x%02X = 0x%02X OK", cfg[i][0], cfg[i][1]);
-    } else {
-      ESP_LOGW("TOUCH", "IC Reg 0x%02X write FAIL (err=%d) - will still work", cfg[i][0], wr);
-    }
-  }
-
-  ESP_LOGI(TAG, "Touch initialization successful");
+  ESP_LOGI(TAG, "Touch initialization successful (CST92xx)");
   return ESP_OK;
 }
 
@@ -10233,20 +10162,17 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   static int start_x = -1;
   static int start_y = -1;
   static bool swiped = false;
-  static uint16_t last_x = 0xFFFF;
-  static uint16_t last_y = 0xFFFF;
-  static uint8_t last_event = 0xFF;
 
+  // Read buffer size: points * 5 + 5 overhead (safe size 20)
+  uint8_t read_buf[20] = {0};
+  uint8_t write_buf[3] = {0};
 
-  // Read buffer size: 7 bytes for CST816T
-  uint8_t read_buf[7] = {0};
-  uint8_t write_buf[1] = {0x00}; // Start reading from register 0x00
+  write_buf[0] = (CST92XX_READ_COMMAND >> 8) & 0xFF;
+  write_buf[1] = CST92XX_READ_COMMAND & 0xFF;
 
-  // Reduced timeout or silent fail to avoid log spam on occasional glich
-  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 1, read_buf,
+  if (i2c_master_transmit_receive(s_touch_dev_handle, write_buf, 2, read_buf,
                                   sizeof(read_buf),
                                   pdMS_TO_TICKS(50)) != ESP_OK) {
-    // ESP_LOGW("TOUCH", "I2C Read Failed"); // Optional: uncomment if needed
     data->state = LV_INDEV_STATE_REL;
     start_x = -1;
     start_y = -1;
@@ -10254,59 +10180,34 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     return;
   }
 
-  // 4. Parse Data for CST816T
-  // Register 0x01: Finger Count
-  // Register 0x02: Event ID (bits 7:6) & X_High (bits 3:0)
-  // Register 0x03: X_Low
-  // Register 0x04: Y_High (bits 3:0)
-  // Register 0x05: Y_Low
-  // (point_count = read_buf[1], event_id = read_buf[2]>>6 - 이 IC 클론에서는 미사용)
+  write_buf[2] = CST92XX_ACK;
+  i2c_master_transmit(s_touch_dev_handle, write_buf, 3, pdMS_TO_TICKS(50));
 
+  if (read_buf[6] != CST92XX_ACK) {
+    data->state = LV_INDEV_STATE_REL;
+    start_x = -1;
+    start_y = -1;
+    swiped = false;
+    return;
+  }
 
-  // For CHSC6413 / CST816 variant:
-  // [2]=X_H, [3]=X_L, [5]=Y_H, [6]=Y_L
-  // [1] seems to indicate touch state (e.g. 0x05 when pressed)
-  
-  if (read_buf[1] != 0x00) { 
+  uint8_t point_count = read_buf[5] & 0x0F;
 
-    // Through raw byte analysis, we found this specific clone shifts the registers:
-    // X is at [3] and [4]
-    // Y is at [5] and [6]
-    uint16_t x = ((read_buf[3] & 0x0F) << 8) | read_buf[4];
-    uint16_t y = ((read_buf[5] & 0x0F) << 8) | read_buf[6];
+  if (point_count > 0 && point_count <= CST92XX_MAX_FINGER_NUM) {
+    uint8_t pressed = read_buf[0] & 0x0F;
+    if (pressed == 0x06) {
+      uint16_t x = ((read_buf[1] << 4) | (read_buf[3] >> 4));
+      uint16_t y = ((read_buf[2] << 4) | (read_buf[3] & 0x0F));
+      
+      data->state = LV_INDEV_STATE_PR;
+      data->point.x = x;
+      data->point.y = y;
 
-    // Anti-Stuck Mechanism removed: IC now configured with 0xEC/0xFA registers
-    // to send continuous coordinates. Release is detected cleanly via read_buf[1]==0x00.
-    // stuck_counter was causing PRESS->RELEASE ghost loop every ~1s.
-    uint8_t current_event = read_buf[3] & 0xC0;
-    bool is_new_touch_event = false;
-
-    if (x == last_x && y == last_y && current_event == last_event) {
-        // Same data repeated - finger still holding. Just report PRESS.
-    } else {
-        last_x = x;
-        last_y = y;
-        last_event = current_event;
-        is_new_touch_event = true;
-    }
-
-    // (stuck_counter 메커니즘 제거: 0xEC/0xFA 레지스터 설정으로 IC가 정상 릴리즈를 보냄)
-
-    data->state = LV_INDEV_STATE_PR;
-    // Flip X and Y coordinates to resolve inverted touch input
-    data->point.x = (LCD_H_RES - 1 - x);
-    data->point.y = (LCD_V_RES - 1 - y);
-
-    if (is_new_touch_event) {
-        ESP_LOGI("TOUCH", "Touch Coordinate: x=%d, y=%d", (int)data->point.x, (int)data->point.y);
-    }
-
-      // Swipe detection
       int dx = 0;
       int dy = 0;
       bool do_swipe_check = false;
 
-      uint8_t gesture = read_buf[1]; // CHSC6413 clone puts Gesture ID in [1]
+      uint8_t gesture = 0; // Force software swipe tracking
 
       // Hardware gesture detected (fast swipe)
       if (gesture == 0x01) { dy = -150; do_swipe_check = true; swiped = false; } // Up
@@ -10468,29 +10369,13 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
       }
       return;
     }
-
-  // No valid touch (Clean Release)
-  if (start_x != -1 && !swiped) {
-      int final_dx = last_x - start_x;
-      int final_dy = last_y - start_y;
-      // ESP_LOGI("TOUCH", "[CLEAN_RELEASE] Start: (%d, %d) -> End: (%d, %d) | Total dx: %d, dy: %d", 
-      //          start_x, start_y, last_x, last_y, final_dx, final_dy);
-      
-      if (abs(final_dx) <= 15 && abs(final_dy) <= 30) {
-           // ESP_LOGI("TOUCH", "[SWIPE_FAIL] Distance too short. Recognized as single touch (Tap).");
-      } else {
-           // ESP_LOGI("TOUCH", "[SWIPE_FAIL] Distance sufficient, but did not match strict swipe direction.");
-      }
   }
 
+  // No valid touch
   data->state = LV_INDEV_STATE_REL;
   start_x = -1;
   start_y = -1;
   swiped = false;
-  // 릴리즈 시 last_x/y/event 초기화 (다음 터치를 새 이벤트로 인식)
-  last_x = 0xFFFF;
-  last_y = 0xFFFF;
-  last_event = 0xFF;
 
 }
 
