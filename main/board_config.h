@@ -12,11 +12,12 @@
 #define PIN_NUM_LCD_DATA3 (GPIO_NUM_14)
 #define PIN_NUM_LCD_RST   (GPIO_NUM_8)
 #define PIN_NUM_LCD_TE    (GPIO_NUM_17)
-#define PIN_NUM_LCD_VCI_EN (GPIO_NUM_18)
-
 // Touch Pins
 #define PIN_TOUCH_SDA GPIO_NUM_6
 #define PIN_TOUCH_SCL GPIO_NUM_7
 #define PIN_TOUCH_INT GPIO_NUM_4
 #define PIN_TOUCH_RST GPIO_NUM_5
+
+// LDR Pin for Auto Brightness (RC Timing)
+#define PIN_NUM_LDR GPIO_NUM_38
 #endif

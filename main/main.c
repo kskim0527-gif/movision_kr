@@ -387,26 +387,7 @@ static uint8_t s_brightness_level = 0;   // 0=Auto, 1=max, 5=min
 uint8_t s_album_option = 0;              // 0=Auto(10s), 1=Manual(Static)
 static uint8_t s_setting_page_index = 1; // 1 or 2
 
-typedef struct {
-  uint16_t sunrise_min;
-  uint16_t sunset_min;
-} sun_times_t;
-
-// Monthly sunrise/sunset times in minutes from midnight (Seoul approx.)
-static const sun_times_t s_monthly_sun_times[12] = {
-    {466, 1064}, // 1월: 07:46, 17:44
-    {430, 1106}, // 2월: 07:10, 18:26
-    {395, 1130}, // 3월: 06:35, 18:50
-    {358, 1148}, // 4월: 05:58, 19:08
-    {324, 1175}, // 5월: 05:24, 19:35
-    {310, 1196}, // 6월: 05:10, 19:56
-    {323, 1194}, // 7월: 05:23, 19:54
-    {348, 1164}, // 8월: 05:48, 19:24
-    {374, 1118}, // 9월: 06:14, 18:38
-    {400, 1073}, // 10월: 06:40, 17:53
-    {432, 1041}, // 11월: 07:12, 17:21
-    {460, 1033}  // 12월: 07:40, 17:13
-};
+// (Removed unused sun_times_t and s_monthly_sun_times as it is replaced by LDR RC timing)
 
 #define LCD_COLOR_WHITE_RGB565 (0xFFFF)
 #define LCD_COLOR_GREEN_RGB565 (0x07E0)
@@ -5737,28 +5718,6 @@ static esp_err_t lcd_init_panel(void) {
     s_lvgl_mutex = xSemaphoreCreateRecursiveMutex();
   }
 
-  // Initialize LCD_VCI_EN pin (GPIO 18) - Power enable for LCD
-  gpio_config_t vci_en_conf = {
-      .pin_bit_mask = (1ULL << PIN_NUM_LCD_VCI_EN),
-      .mode = GPIO_MODE_OUTPUT,
-      .pull_up_en = GPIO_PULLUP_DISABLE,
-      .pull_down_en = GPIO_PULLDOWN_DISABLE,
-      .intr_type = GPIO_INTR_DISABLE,
-  };
-  esp_err_t ret = gpio_config(&vci_en_conf);
-  if (ret != ESP_OK) {
-    ESP_LOGE(TAG, "LCD: Failed to configure LCD_VCI_EN pin (%s)",
-             esp_err_to_name(ret));
-    return ret;
-  }
-
-  // Set LCD_VCI_EN to HIGH to enable LCD power
-  gpio_set_level(PIN_NUM_LCD_VCI_EN, 1);
-  ESP_LOGI(TAG, "LCD: LCD_VCI_EN (GPIO %d) set to HIGH", PIN_NUM_LCD_VCI_EN);
-
-  // Wait for LCD power to stabilize
-  vTaskDelay(pdMS_TO_TICKS(100));
-
   // Increase image cache size to 4 to utilize PSRAM effectively.
   // Each 466x466 RGB565 image takes ~434KB. 4 images = ~1.7MB.
   lv_img_cache_set_size(4);
@@ -6852,52 +6811,91 @@ static void apply_hw_brightness(uint8_t level) {
   LVGL_UNLOCK();
 }
 
+// 조도 센서 측정 함수 (마이크로초 반환) - 최적화 적용 (충전 후 방전만 측정)
+static uint32_t read_ldr_rc_timing(void) {
+#ifndef PIN_NUM_LDR
+#define PIN_NUM_LDR GPIO_NUM_38
+#endif
+
+    // 핀 초기화 (다른 IOMUX 기능 해제)
+    gpio_reset_pin(PIN_NUM_LDR);
+
+    // --- 충전(1) 후 방전(0)되는 시간 측정 (이 보드에 맞는 방식) ---
+    gpio_set_direction(PIN_NUM_LDR, GPIO_MODE_OUTPUT);
+    gpio_set_level(PIN_NUM_LDR, 1);
+    
+    // vTaskDelay는 CPU를 다른 작업에 양보하므로 점유율이 0%입니다.
+    vTaskDelay(pdMS_TO_TICKS(5)); // 5ms 충전
+
+    int64_t start_time = esp_timer_get_time();
+    gpio_set_direction(PIN_NUM_LDR, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(PIN_NUM_LDR, GPIO_FLOATING);
+
+    int64_t timeout_time = start_time + 15000; 
+    
+    // CPU가 폴링(Polling)하며 대기하는 구간 (약 700~850us 소요)
+    while (gpio_get_level(PIN_NUM_LDR) == 1) {
+        if (esp_timer_get_time() > timeout_time) break;
+    }
+    
+    int64_t time_to_low = esp_timer_get_time() - start_time;
+    return (uint32_t)time_to_low;
+}
+
 static void update_auto_brightness(bool force) {
   if (!force && s_brightness_level != 0)
     return; // Not in Auto mode and not forced
 
-  time_t now;
-  struct tm timeinfo;
-  time(&now);
-  localtime_r(&now, &timeinfo);
-
-  int month = timeinfo.tm_mon; // 0-11
-  int current_min = timeinfo.tm_hour * 60 + timeinfo.tm_min;
-
-  uint16_t sunrise = s_monthly_sun_times[month].sunrise_min;
-  uint16_t sunset = s_monthly_sun_times[month].sunset_min;
-
-  uint8_t target_level = 5; // Default: Brightest (Day)
-  if (current_min < sunrise) {
-    target_level = 1; // Night: Darkest
-  } else if (current_min < sunrise + 30) {
-    target_level = 3;
-  } else if (current_min < sunset - 30) {
-    target_level = 5;                // Day
-  } else if (current_min < sunset) { // Between Sunset-30m and Sunset -> Level 3
-    target_level = 3;
-  } else if (current_min < sunset + 30) {
-    target_level = 3;
+  // LDR 조도 측정 (RC Timing 방식)
+  uint32_t ldr_time_us = read_ldr_rc_timing();
+  
+  // 측정 시간(us)을 밝기 레벨(2~5)로 매핑
+  // 850 이상: 5, 800 이상: 4, 750 이상: 3, 749 이하: 2
+  uint8_t measured_level = 2;
+  if (ldr_time_us >= 850) {
+      measured_level = 5;
+  } else if (ldr_time_us >= 800) {
+      measured_level = 4;
+  } else if (ldr_time_us >= 750) {
+      measured_level = 3;
   } else {
-    target_level = 1; // Night
+      measured_level = 2; 
   }
 
+  static uint8_t s_pending_level = 0;
+  static uint8_t s_consecutive_count = 0;
+  static uint8_t s_current_target_level = 5; // 초기 레벨
+
+  // 5회 이상 동일한 값이 유지될 때만 타겟 레벨 변경 (디바운스)
+  if (measured_level != s_pending_level) {
+      s_pending_level = measured_level;
+      s_consecutive_count = 1;
+  } else {
+      if (s_consecutive_count < 5) {
+          s_consecutive_count++;
+      }
+      if (s_consecutive_count >= 5) {
+          s_current_target_level = measured_level;
+      }
+  }
+
+  // 강제 업데이트(force)인 경우, 디바운스 무시하고 즉시 적용
+  if (force) {
+      s_current_target_level = measured_level;
+      s_pending_level = measured_level;
+      s_consecutive_count = 5;
+  }
+
+  uint8_t target_level = s_current_target_level;
+
   static uint8_t s_last_applied_auto = 0;
-  ESP_LOGI(SYS_MON_TAG,
-           "Internal Free: %u KB, Min Free: %u KB | PSRAM Free: %u KB, Min "
-           "Free: %u KB",
-           (unsigned int)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
-           (unsigned int)(heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL) /
-                          1024),
-           (unsigned int)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
-           (unsigned int)(heap_caps_get_minimum_free_size(MALLOC_CAP_SPIRAM) /
-                          1024));
+  
   if (force || target_level != s_last_applied_auto) {
     apply_hw_brightness(target_level);
     s_last_applied_auto = target_level;
     ESP_LOGI(TAG,
-             "Auto Brightness Applied: Level %d (Month: %d, Time: %02d:%02d)",
-             target_level, month + 1, timeinfo.tm_hour, timeinfo.tm_min);
+             "Auto Brightness Applied: Level %d (LDR Time: %u us)",
+             target_level, (unsigned int)ldr_time_us);
   }
 }
 
