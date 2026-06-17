@@ -187,7 +187,7 @@ typedef enum {
 
 static display_mode_t s_current_mode = DISPLAY_MODE_BOOT;
 static guide_sub_mode_t s_guide_sub_mode = GUIDE_SUB_STANDBY;
-static uint8_t s_clock_option = 1; // 0: Clock 1, 1: Clock 2, 2: Auto
+static uint8_t s_clock_option = 1; // 0: Clock 1, 1: Clock 2, 2: Clock 3, 3: Auto
 static display_mode_t s_last_base_mode = DISPLAY_MODE_GUIDE;
 static bool s_is_manual_mode_switch = false;
 
@@ -431,6 +431,8 @@ static lv_obj_t *s_hud_screen = NULL;
 static lv_obj_t *s_speedometer_screen = NULL; // Speedometer Screen
 static lv_obj_t *s_clock_screen = NULL;
 static lv_obj_t *s_clock2_screen = NULL; // New Clock 2 Screen
+static lv_obj_t *s_clock3_screen = NULL; // Clock 3 Screen
+static lv_obj_t *s_clock3_date_label = NULL;
 static lv_obj_t *s_album_screen = NULL;
 static lv_obj_t *s_setting_screen = NULL; // Setting Screen
 // static lv_obj_t *s_virtual_drive_screen = NULL; // Removed
@@ -456,8 +458,10 @@ static esp_err_t init_touch(void);
 static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void create_clock_ui(void);
 static void create_clock2_ui(void); // Forward decl
+static void create_clock3_ui(void); // Clock 3 Forward decl
 static void draw_analog_clock2(int hour, int minute,
                                int second); // Forward decl
+static void draw_analog_clock3(int hour, int minute, int second, int month, int day, int wday); // Forward decl
 static void create_album_ui(void);
 static void create_setting_ui(void); // Setting UI Forward Decl
 void update_setting_ui_labels(void); // Helper Decl
@@ -543,7 +547,7 @@ static void load_nvs_settings(void) {
       s_brightness_level = val;
     if (nvs_get_u8(nvs, "album_opt", &val) == ESP_OK && val <= 5)
       s_album_option = val;
-    if (nvs_get_u8(nvs, "clock_opt", &val) == ESP_OK && val <= 2)
+    if (nvs_get_u8(nvs, "clock_opt", &val) == ESP_OK && val <= 3)
       s_clock_option = val;
     if (nvs_get_u8(nvs, "boot_mode", &val) == ESP_OK) {
       // [User Request] 0:기본(GUIDE), 1:시계, 2:앨범 매핑 적용
@@ -5739,7 +5743,7 @@ static esp_err_t lcd_init_panel(void) {
                                          // 사용 보장
       .flags = SPICOMMON_BUSFLAG_QUAD,
   };
-  ret = spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO);
+  esp_err_t ret = spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "LCD: QSPI bus init failed (%s)", esp_err_to_name(ret));
     return ret;
@@ -6049,6 +6053,7 @@ static esp_err_t lvgl_init(void) {
   create_boot_ui();
   create_clock_ui();
   create_clock2_ui();      // Create Clock 2
+  create_clock3_ui();      // Create Clock 3
   create_speedometer_ui(); // Create Speedometer
   create_album_ui();
   create_setting_ui();
@@ -6567,35 +6572,36 @@ static void update_display_mode_ui(display_mode_t mode) {
     break;
 
   case DISPLAY_MODE_CLOCK: {
-    bool use_clock2 = (s_clock_option == 1);
-    if (s_clock_option == 2) {
-      // [User Request] 재부팅 시마다 스타일이 바뀔 수 있도록 랜덤 오프셋 적용
+    int active_clock = s_clock_option;
+    if (s_clock_option == 3) {
       if (s_auto_clock_offset == -1) {
-        s_auto_clock_offset = (int)(esp_random() % 2);
+        s_auto_clock_offset = (int)(esp_random() % 3);
       }
-
       time_t now;
       struct tm t;
       time(&now);
       localtime_r(&now, &t);
-      // 오프셋을 더해 시간 기반 전환의 기준점을 부팅 시마다 다르게 설정
-      use_clock2 = ((t.tm_hour + s_auto_clock_offset) % 2 == 0);
-    }
-    if (!use_clock2) {
-      lv_scr_load(s_clock_screen);
-    } else {
-      lv_scr_load(s_clock2_screen);
+      active_clock = (t.tm_hour + s_auto_clock_offset) % 3;
     }
 
-    // Load current time immediately to avoid invisible hands on startup
+    if (active_clock == 0) {
+      lv_scr_load(s_clock_screen);
+    } else if (active_clock == 1) {
+      lv_scr_load(s_clock2_screen);
+    } else {
+      lv_scr_load(s_clock3_screen);
+    }
+
     time_t now;
     struct tm t;
     time(&now);
     localtime_r(&now, &t);
-    if (!use_clock2)
+    if (active_clock == 0)
       draw_analog_clock(t.tm_hour, t.tm_min, t.tm_sec);
-    else
+    else if (active_clock == 1)
       draw_analog_clock2(t.tm_hour, t.tm_min, t.tm_sec);
+    else
+      draw_analog_clock3(t.tm_hour, t.tm_min, t.tm_sec, t.tm_mon, t.tm_mday, t.tm_wday);
   }
     align_avr_speed_labels();
     break;
@@ -7016,7 +7022,7 @@ static void clock_up_event_cb(lv_event_t *e) {
 }
 
 static void do_clock_down(void) {
-  if (s_clock_option < 2) {
+  if (s_clock_option < 3) {
     s_clock_option++;
     update_setting_ui_labels();
   }
@@ -7127,6 +7133,8 @@ void update_setting_ui_labels(void) {
       lv_label_set_text(s_setting_clock_val_label, "1");
     else if (s_clock_option == 1)
       lv_label_set_text(s_setting_clock_val_label, "2");
+    else if (s_clock_option == 2)
+      lv_label_set_text(s_setting_clock_val_label, "3");
     else
       lv_label_set_text(s_setting_clock_val_label, "A");
 
@@ -7145,7 +7153,7 @@ void update_setting_ui_labels(void) {
         lv_obj_add_flag(s_setting_circ_clock_up, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if (s_clock_option == 2) {
+    if (s_clock_option == 3) {
       lv_obj_add_flag(s_setting_clock_btn_down, LV_OBJ_FLAG_CLICKABLE);
       lv_obj_clear_flag(s_setting_clock_btn_down, LV_OBJ_FLAG_CLICKABLE);
       if (s_setting_line_clock_dn)
@@ -8743,6 +8751,15 @@ static lv_point_t s_clock2_hour_points[2];
 static lv_point_t s_clock2_minute_points[2];
 static lv_point_t s_clock2_second_points[2];
 
+// Clock 3 Objects (Tesla-Inspired Analog)
+static lv_obj_t *s_clock3_bg_img = NULL;
+static lv_obj_t *s_clock3_hour_img = NULL;
+static lv_obj_t *s_clock3_hour_shadow_img = NULL;
+static lv_obj_t *s_clock3_minute_img = NULL;
+static lv_obj_t *s_clock3_minute_shadow_img = NULL;
+static lv_obj_t *s_clock3_second_img = NULL;
+static lv_obj_t *s_clock3_center_img = NULL;
+
 static lv_timer_t *s_clock_timer = NULL;
 // static lv_obj_t *s_clock_wday_label = NULL; // Day of Week (SUN, MON...)
 // static lv_obj_t *s_clock_day_label = NULL;  // Day of Month (01, 11...)
@@ -8811,6 +8828,7 @@ static void clock_timer_cb(lv_timer_t *timer) {
     }
   }
 
+
   time_t now;
   struct tm timeinfo;
   time(&now);
@@ -8836,18 +8854,20 @@ static void clock_timer_cb(lv_timer_t *timer) {
                             week_days[wday % 7]);
     }
   } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
-    bool use_clock2 = (s_clock_option == 1);
-    if (s_clock_option == 2) {
+    int active_clock = s_clock_option;
+    if (s_clock_option == 3) {
       if (s_auto_clock_offset == -1) {
-        s_auto_clock_offset = (int)(esp_random() % 2);
+        s_auto_clock_offset = (int)(esp_random() % 3);
       }
-      use_clock2 = ((hour + s_auto_clock_offset) % 2 == 0);
+      active_clock = ((hour + s_auto_clock_offset) % 3);
     }
 
-    if (!use_clock2)
+    if (active_clock == 0)
       draw_analog_clock(hour, minute, second);
-    else
+    else if (active_clock == 1)
       draw_analog_clock2(hour, minute, second);
+    else
+      draw_analog_clock3(hour, minute, second, timeinfo.tm_mon, day, wday);
   }
 }
 
@@ -9134,6 +9154,90 @@ static void create_clock2_ui(void) {
   lv_obj_t *center_img = lv_img_create(s_clock2_screen);
   lv_img_set_src(center_img, "S:/littlefs/clock_2/center.png");
   lv_obj_center(center_img);
+}
+
+static void create_clock3_ui(void) {
+  if (s_clock3_screen != NULL)
+    return;
+  s_clock3_screen = lv_obj_create(NULL);
+  lv_obj_set_style_bg_color(s_clock3_screen, lv_color_black(), 0);
+  lv_obj_set_style_bg_opa(s_clock3_screen, LV_OPA_COVER, 0);
+
+  // Background Image
+  s_clock3_bg_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_bg_img, "S:/littlefs/clock_3/screen.png");
+  lv_obj_center(s_clock3_bg_img);
+
+  // Hour Hand Shadow Image
+  s_clock3_hour_shadow_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_hour_shadow_img, "S:/littlefs/clock_3/hour_shadow.png");
+  lv_img_set_pivot(s_clock3_hour_shadow_img, 13, 180);
+  lv_obj_set_pos(s_clock3_hour_shadow_img, LCD_H_RES/2 - 13 + 4, LCD_V_RES/2 - 180 + 4);
+  lv_img_set_antialias(s_clock3_hour_shadow_img, true);
+
+  // Minute Hand Shadow Image
+  s_clock3_minute_shadow_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_minute_shadow_img, "S:/littlefs/clock_3/minute_shadow.png");
+  lv_img_set_pivot(s_clock3_minute_shadow_img, 11, 245);
+  lv_obj_set_pos(s_clock3_minute_shadow_img, LCD_H_RES/2 - 11 + 4, LCD_V_RES/2 - 245 + 4);
+  lv_img_set_antialias(s_clock3_minute_shadow_img, true);
+
+  // Hour Hand Image
+  s_clock3_hour_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_hour_img, "S:/littlefs/clock_3/hour.png");
+  lv_img_set_pivot(s_clock3_hour_img, 13, 180); // Center pivot defined in Python script
+  lv_obj_set_pos(s_clock3_hour_img, LCD_H_RES/2 - 13, LCD_V_RES/2 - 180);
+  lv_img_set_antialias(s_clock3_hour_img, true);
+
+  // Minute Hand Image
+  s_clock3_minute_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_minute_img, "S:/littlefs/clock_3/minute.png");
+  lv_img_set_pivot(s_clock3_minute_img, 11, 245); // Center pivot
+  lv_obj_set_pos(s_clock3_minute_img, LCD_H_RES/2 - 11, LCD_V_RES/2 - 245);
+  lv_img_set_antialias(s_clock3_minute_img, true);
+
+  // Second Hand Image
+  s_clock3_second_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_second_img, "S:/littlefs/clock_3/second.png");
+  lv_img_set_pivot(s_clock3_second_img, 7, 240); // Center pivot
+  lv_obj_set_pos(s_clock3_second_img, LCD_H_RES/2 - 7, LCD_V_RES/2 - 240);
+  lv_img_set_antialias(s_clock3_second_img, true);
+
+  // Center Dot Image
+  s_clock3_center_img = lv_img_create(s_clock3_screen);
+  lv_img_set_src(s_clock3_center_img, "S:/littlefs/clock_3/center.png");
+  lv_obj_center(s_clock3_center_img);
+}
+
+static void draw_analog_clock3(int hour, int minute, int second, int month, int day, int wday) {
+  if (!s_clock3_hour_img)
+    return;
+
+  // Calculate angles in 0.1 degree increments
+  int h_angle = ((hour % 12) * 30 + minute * 0.5) * 10;
+  int m_angle = (minute * 6 + second * 0.1) * 10;
+  int s_angle = (second * 6) * 10;
+
+  // Set rotation angles
+  if (s_clock3_hour_shadow_img) lv_img_set_angle(s_clock3_hour_shadow_img, h_angle);
+  if (s_clock3_minute_shadow_img) lv_img_set_angle(s_clock3_minute_shadow_img, m_angle);
+  
+  lv_img_set_angle(s_clock3_hour_img, h_angle);
+  lv_img_set_angle(s_clock3_minute_img, m_angle);
+  lv_img_set_angle(s_clock3_second_img, s_angle);
+
+  // Ensure center dot stays on top of all lines
+  if (s_clock3_center_img) {
+      lv_obj_move_foreground(s_clock3_center_img);
+  }
+
+  if (s_clock3_date_label && s_font_addr_30) {
+    const char *months[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+    const char *week_days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+    lv_label_set_text_fmt(s_clock3_date_label, "%s %02d %s",
+                          months[month % 12], day, week_days[wday % 7]);
+  }
 }
 
 static void scan_intro_images(void);
@@ -10287,7 +10391,7 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
             else load_image_from_sd(-1);
             swiped = true;
           } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
-            s_clock_option = (s_clock_option == 0) ? 1 : 0;
+            s_clock_option = (s_clock_option + 1) % 3;
             ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d", s_clock_option);
             s_is_manual_mode_switch = true;
             switch_display_mode(DISPLAY_MODE_CLOCK);
@@ -10932,7 +11036,7 @@ void app_main(void) {
     }
 
     // 2. 시계 자동 갱신 (1시간 = 3600초)
-    if (s_clock_option == 2 && s_current_mode == DISPLAY_MODE_CLOCK) {
+    if (s_clock_option == 3 && s_current_mode == DISPLAY_MODE_CLOCK) {
       if (++s_clock_auto_timer >= 3600) {
         s_clock_auto_timer = 0;
         ESP_LOGI(TAG, "Auto Clock Toggle (1 hour)");
