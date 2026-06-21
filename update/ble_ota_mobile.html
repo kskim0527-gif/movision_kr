@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>MOVISION BLE OTA</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .logo h1 {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+    .logo p { font-size: 13px; color: #8b949e; }
+
+    /* Step indicator */
+    .steps {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .step {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: #21262d;
+      transition: background 0.4s;
+    }
+    .step.active { background: #58a6ff; }
+    .step.done { background: #3fb950; }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #238636, #2ea043);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+    .btn-primary:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+    .btn-danger {
+      background: linear-gradient(135deg, #da3633, #f85149);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #21262d;
+      color: #8b949e;
+      border: 1px solid #30363d;
+    }
+
+    /* File input */
+    .file-zone {
+      border: 2px dashed #30363d;
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+    .file-zone:hover, .file-zone.drag { border-color: #58a6ff; }
+    .file-zone input { display: none; }
+    .file-zone .icon { font-size: 36px; margin-bottom: 8px; }
+    .file-zone .text { font-size: 14px; color: #8b949e; }
+    .file-zone .filename { font-size: 14px; color: #3fb950; font-weight: 600; margin-top: 6px; }
+
+    /* Log */
+    .log-box {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 12px;
+      height: 160px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-line { margin-bottom: 2px; }
+    .log-ok { color: #3fb950; }
+    .log-err { color: #f85149; }
+    .log-warn { color: #d29922; }
+    .log-info { color: #58a6ff; }
+    .log-dim { color: #484f58; }
+
+    /* Progress */
+    .progress-wrap { margin: 16px 0; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #8b949e;
+      margin-bottom: 8px;
+    }
+    .progress-track {
+      background: #21262d;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #238636, #3fb950);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progress-bar.flash {
+      background: linear-gradient(90deg, #1f6feb, #58a6ff);
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .badge-idle { background: #21262d; color: #8b949e; }
+    .badge-connecting { background: #1f3a5f; color: #58a6ff; }
+    .badge-connected { background: #1a3a1a; color: #3fb950; }
+    .badge-updating { background: #3a2a00; color: #d29922; }
+    .badge-done { background: #1a3a1a; color: #3fb950; }
+    .badge-error { background: #3a1a1a; color: #f85149; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .dot.pulse { animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .section-title {
+      font-size: 13px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .note {
+      background: #1a2332;
+      border: 1px solid #1f3a5f;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #8b949e;
+      line-height: 1.6;
+    }
+    .note strong { color: #58a6ff; }
+
+    #success-card {
+      display: none;
+      text-align: center;
+    }
+    .success-icon { font-size: 64px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<div class="logo">
+  <h1>📡 MOVISION BLE OTA</h1>
+  <p>Android Chrome 전용 · Web Bluetooth</p>
+</div>
+
+<!-- Step Indicators -->
+<div class="card" style="padding: 16px 24px;">
+  <div class="steps">
+    <div class="step" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+  </div>
+  <div style="display:flex; justify-content:space-between; font-size:11px; color:#484f58;">
+    <span>① 파일 선택</span>
+    <span>② BLE 연결</span>
+    <span>③ OTA 전송</span>
+  </div>
+</div>
+
+<!-- STEP 1: File Selection -->
+<div class="card" id="step1-card">
+  <div class="section-title">① 펌웨어 파일 선택</div>
+  <div class="file-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📂</div>
+    <div class="text">movision.bin 파일을 선택하세요</div>
+    <div class="filename" id="fileName"></div>
+    <input type="file" id="fileInput" accept=".bin">
+  </div>
+  <div class="note">
+    <strong>파일 위치:</strong> update/update_movision-hd1_v260622/movision.bin<br>
+    Google Drive나 카카오톡으로 파일을 공유 후 선택하세요.
+  </div>
+</div>
+
+<!-- STEP 2: BLE Connection -->
+<div class="card" id="step2-card">
+  <div class="section-title">② MOVISION HUD 연결</div>
+  <div id="status-badge" class="status-badge badge-idle">
+    <div class="dot"></div>
+    <span id="status-text">연결 안됨</span>
+  </div>
+  <button class="btn btn-primary" id="btnConnect" onclick="connectBLE()">🔵 BLE 연결 시작</button>
+  <button class="btn btn-danger" id="btnDisconnect" onclick="disconnectBLE()" style="display:none">연결 해제</button>
+  <div class="note">
+    연결 버튼을 누르면 브라우저가 BLE 장치 선택 창을 엽니다.<br>
+    <strong>MOVISION HUD1</strong>을 선택하세요.
+  </div>
+</div>
+
+<!-- STEP 3: OTA -->
+<div class="card" id="step3-card">
+  <div class="section-title">③ 펌웨어 전송</div>
+
+  <div id="ota-type-select">
+    <button class="btn btn-primary" onclick="startOTA('app')" id="btnApp">🔄 펌웨어만 업데이트</button>
+    <div class="note" style="margin-top:0">권장: 펌웨어(movision.bin)만 전송합니다.</div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <div class="progress-label">
+      <span id="progLabel">전송 중...</span>
+      <span id="progPct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-bar" id="progBar"></div></div>
+  </div>
+</div>
+
+<!-- Log -->
+<div class="card">
+  <div class="section-title">로그</div>
+  <div class="log-box" id="logBox"></div>
+  <button class="btn btn-secondary" style="margin-top:10px" onclick="clearLog()">로그 지우기</button>
+</div>
+
+<!-- Success -->
+<div class="card" id="success-card">
+  <div class="success-icon">🎉</div>
+  <h2 style="text-align:center; color:#3fb950; margin-bottom:8px">업데이트 성공!</h2>
+  <p style="text-align:center; color:#8b949e; font-size:14px">기기가 자동으로 재부팅됩니다.<br>약 5초 후 BLE 연결을 다시 시도하세요.</p>
+</div>
+
+<script>
+// ── UUID ──────────────────────────────────────────────────
+const UUID_SVC  = '80323655-3537-410b-ab8c-cc07fc9673ce';
+const UUID_CTRL = '80323656-3537-410b-ab8c-cc07fc9673ce';
+const UUID_DATA = '80323657-3537-410b-ab8c-cc07fc9673ce';
+
+const CMD_BEGIN_APP     = 1;
+const CMD_END_APP       = 2;
+const CMD_BEGIN_STORAGE = 3;
+const CMD_END_STORAGE   = 4;
+
+const CHUNK_SIZE = 490;  // MTU-3 safe size
+
+// ── State ──────────────────────────────────────────────────
+let device = null;
+let server = null;
+let ctrlChar = null;
+let dataChar = null;
+let firmwareData = null;
+
+// ── UI Helpers ─────────────────────────────────────────────
+function log(msg, type = '') {
+  const box = document.getElementById('logBox');
+  const line = document.createElement('div');
+  line.className = 'log-line' + (type ? ' log-' + type : '');
+  const now = new Date().toLocaleTimeString('ko-KR', {hour12:false});
+  line.textContent = `[${now}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog() { document.getElementById('logBox').innerHTML = ''; }
+
+function setStatus(text, badgeClass, pulse = false) {
+  const badge = document.getElementById('status-badge');
+  const dot = badge.querySelector('.dot');
+  badge.className = 'status-badge ' + badgeClass;
+  document.getElementById('status-text').textContent = text;
+  dot.className = 'dot' + (pulse ? ' pulse' : '');
+}
+
+function setProgress(pct, label, flash = false) {
+  document.getElementById('progBar').style.width = pct + '%';
+  document.getElementById('progBar').className = 'progress-bar' + (flash ? ' flash' : '');
+  document.getElementById('progPct').textContent = pct + '%';
+  document.getElementById('progLabel').textContent = label;
+}
+
+function updateSteps(active) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('s' + i);
+    el.className = 'step' + (i < active ? ' done' : i === active ? ' active' : '');
+  }
+}
+
+// ── File Selection ─────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    firmwareData = new Uint8Array(ev.target.result);
+    document.getElementById('fileName').textContent = `✓ ${file.name}  (${(firmwareData.length/1024).toFixed(1)} KB)`;
+    log(`파일 로드: ${file.name} (${firmwareData.length} bytes)`, 'ok');
+    updateSteps(2);
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Drag & Drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    document.getElementById('fileInput').files = e.dataTransfer.files;
+    document.getElementById('fileInput').dispatchEvent(new Event('change'));
+  }
+});
+
+// ── BLE Connect ────────────────────────────────────────────
+async function connectBLE() {
+  if (!navigator.bluetooth) {
+    log('Web Bluetooth를 지원하지 않습니다. Android Chrome을 사용하세요.', 'err');
+    alert('Web Bluetooth 미지원 브라우저입니다.\nAndroid Chrome에서 열어주세요.');
+    return;
+  }
+
+  try {
+    setStatus('연결 중...', 'badge-connecting', true);
+    log('BLE 장치 검색 중...', 'info');
+
+    device = await navigator.bluetooth.requestDevice({
+      filters: [
+        { name: 'MOVISION HUD1' },
+        { namePrefix: 'MOVISION' },
+        { services: [UUID_SVC] }
+      ],
+      optionalServices: [UUID_SVC]
+    });
+
+    log(`장치 선택: ${device.name} [${device.id}]`, 'ok');
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    log('GATT 서버 연결 중...', 'info');
+    server = await device.gatt.connect();
+    log('GATT 연결 완료', 'ok');
+
+    log('OTA 서비스 탐색 중...', 'info');
+    const service = await server.getPrimaryService(UUID_SVC);
+    log('OTA 서비스 발견!', 'ok');
+
+    ctrlChar = await service.getCharacteristic(UUID_CTRL);
+    dataChar = await service.getCharacteristic(UUID_DATA);
+    log('OTA 특성 준비 완료', 'ok');
+
+    setStatus(`연결됨: ${device.name}`, 'badge-connected');
+    document.getElementById('btnConnect').style.display = 'none';
+    document.getElementById('btnDisconnect').style.display = 'block';
+    updateSteps(firmwareData ? 3 : 2);
+    log('✅ 연결 성공! 이제 펌웨어 전송을 시작할 수 있습니다.', 'ok');
+
+  } catch(e) {
+    setStatus('연결 실패', 'badge-error');
+    log(`연결 오류: ${e.message}`, 'err');
+    log('장치가 BLE 광고 중인지 확인하고 다시 시도하세요.', 'warn');
+  }
+}
+
+function onDisconnected() {
+  setStatus('연결 끊김', 'badge-idle');
+  log('BLE 연결이 끊어졌습니다.', 'warn');
+  document.getElementById('btnConnect').style.display = 'block';
+  document.getElementById('btnDisconnect').style.display = 'none';
+  ctrlChar = null;
+  dataChar = null;
+}
+
+async function disconnectBLE() {
+  if (device && device.gatt.connected) {
+    await device.gatt.disconnect();
+  }
+}
+
+// ── OTA Transfer ───────────────────────────────────────────
+async function startOTA(type) {
+  if (!firmwareData) {
+    alert('먼저 펌웨어 파일을 선택해주세요!');
+    return;
+  }
+  if (!ctrlChar || !dataChar) {
+    alert('먼저 BLE 연결을 해주세요!');
+    return;
+  }
+
+  const data = firmwareData;
+  const size = data.length;
+  const cmdBegin = (type === 'app') ? CMD_BEGIN_APP : CMD_BEGIN_STORAGE;
+  const cmdEnd = (type === 'app') ? CMD_END_APP : CMD_END_STORAGE;
+  const label = (type === 'app') ? '펌웨어' : '스토리지';
+
+  // Lock UI
+  document.getElementById('btnApp').disabled = true;
+  document.getElementById('btnDisconnect').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  setStatus('업데이트 중...', 'badge-updating', true);
+
+  try {
+    // 1. BEGIN command with size
+    log(`[1/3] ${label} OTA 시작 (${(size/1024).toFixed(1)} KB)...`, 'info');
+    const beginCmd = new Uint8Array(5);
+    beginCmd[0] = cmdBegin;
+    new DataView(beginCmd.buffer).setUint32(1, size, true); // little-endian
+    await ctrlChar.writeValueWithoutResponse(beginCmd);
+    log('  → BEGIN 명령 전송 완료. 소거 대기 중...', 'dim');
+    setProgress(0, '소거 중...', true);
+
+    // Wait for erase (variable by flash size)
+    const eraseWait = Math.max(3000, Math.ceil(size / (64 * 1024)) * 2000);
+    await sleep(eraseWait);
+    log(`  → 소거 완료 (${eraseWait}ms 대기)`, 'ok');
+
+    // 2. Data chunks
+    log(`[2/3] 데이터 전송 중 (청크: ${CHUNK_SIZE}B)...`, 'info');
+    let offset = 0;
+    let chunkIdx = 0;
+    const totalChunks = Math.ceil(size / CHUNK_SIZE);
+
+    while (offset < size) {
+      const end = Math.min(offset + CHUNK_SIZE, size);
+      const chunk = data.slice(offset, end);
+      await dataChar.writeValueWithoutResponse(chunk);
+      offset = end;
+      chunkIdx++;
+
+      const pct = Math.floor(offset * 100 / size);
+      setProgress(pct, `전송 중: ${(offset/1024).toFixed(1)} / ${(size/1024).toFixed(1)} KB`);
+
+      if (chunkIdx % 50 === 0) {
+        log(`  진행: ${pct}% (${offset}/${size} bytes)`, 'dim');
+        // Small yield every 50 chunks to avoid BLE buffer overflow
+        await sleep(10);
+      }
+
+      // Throttle: give BLE stack time to breathe every 20 packets
+      if (chunkIdx % 20 === 0) {
+        await sleep(5);
+      }
+    }
+
+    log(`  → 전송 완료 (총 ${chunkIdx}개 청크)`, 'ok');
+
+    // 3. END command
+    log('[3/3] OTA 완료 명령 전송...', 'info');
+    setProgress(100, '완료 명령 전송 중...', true);
+    await sleep(200); // Flush remaining packets
+    const endCmd = new Uint8Array([cmdEnd]);
+    await ctrlChar.writeValueWithoutResponse(endCmd);
+    log('  → END 명령 전송 완료', 'ok');
+
+    // Done
+    setProgress(100, '업데이트 완료!');
+    setStatus('업데이트 성공!', 'badge-done');
+    log('✅ OTA 업데이트 성공! 기기가 재부팅됩니다...', 'ok');
+
+    document.getElementById('success-card').style.display = 'block';
+    document.getElementById('success-card').scrollIntoView({behavior: 'smooth'});
+
+  } catch(e) {
+    setStatus('업데이트 실패', 'badge-error');
+    log(`OTA 오류: ${e.message}`, 'err');
+    log('BLE 연결 상태를 확인하고 다시 시도하세요.', 'warn');
+    document.getElementById('btnApp').disabled = false;
+    document.getElementById('btnDisconnect').disabled = false;
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Initialize
+updateSteps(1);
+log('페이지 로드 완료. 파일을 선택하고 BLE 연결을 시작하세요.', 'info');
+if (!navigator.bluetooth) {
+  log('⚠️ Web Bluetooth 미지원! Android Chrome에서 열어야 합니다.', 'err');
+}
+</script>
+</body>
+</html>

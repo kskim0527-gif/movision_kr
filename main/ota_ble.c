@@ -138,14 +138,38 @@ int ota_on_access(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_ac
                 }
             } else if (cmd == 2 || cmd == 4) { // END
                 while (uxQueueMessagesWaiting(s_ota_queue) > 0) vTaskDelay(10);
+                bool success = true;
                 if (ota_in_progress) {
-                    esp_ota_end(update_handle);
-                    esp_ota_set_boot_partition(update_partition);
+                    esp_err_t err = esp_ota_end(update_handle);
+                    if (err != ESP_OK) {
+                        ESP_LOGE(TAG, "esp_ota_end failed! err=0x%x", err);
+                        success = false;
+                    } else {
+                        err = esp_ota_set_boot_partition(update_partition);
+                        if (err != ESP_OK) {
+                            ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
+                            success = false;
+                        } else {
+                            ESP_LOGI(TAG, "OTA Boot partition set successfully!");
+                        }
+                    }
+                    update_handle = 0;
+                    ota_in_progress = false;
                 }
-                const esp_timer_create_args_t args = {.callback = restart_timer_callback, .name = "reboot"};
-                esp_timer_handle_t timer;
-                esp_timer_create(&args, &timer);
-                esp_timer_start_once(timer, 3000000);
+                if (storage_update_in_progress) {
+                    storage_update_in_progress = false;
+                    ESP_LOGI(TAG, "Storage partition update finished!");
+                }
+
+                if (success) {
+                    ESP_LOGI(TAG, "Rebooting in 3 seconds...");
+                    const esp_timer_create_args_t args = {.callback = restart_timer_callback, .name = "reboot"};
+                    esp_timer_handle_t timer;
+                    esp_timer_create(&args, &timer);
+                    esp_timer_start_once(timer, 3000000);
+                } else {
+                    update_ui_progress(0, "Update FAILED!");
+                }
             }
         }
     } else if (attr_handle == s_ota_data_handle) {
