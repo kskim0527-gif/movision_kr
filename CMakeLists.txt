@@ -41,7 +41,7 @@ littlefs_create_partition_image(storage main/flash_data FLASH_IN_PROJECT)
 
 # Define directories for update files
 set(UPDATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/update")
-set(VERSION_DIR "${UPDATE_DIR}/update_movision-hd1_v${PROJECT_VER}")
+set(VERSION_DIR "${UPDATE_DIR}/update_movision_v${PROJECT_VER}")
 
 # Post-build step to copy binaries after compilation
 add_custom_target(copy_update_files ALL

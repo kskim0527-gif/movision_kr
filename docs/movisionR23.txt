@@ -1,0 +1,5458 @@
+*PADS-LOGIC-V2005.0-CP949* DESIGN EXPORT FILE FROM PADS LOGIC VVX.2.2
+*SCH*        GENERAL PARAMETERS OF THE SCHEMATIC DESIGN"
+
+CUR SHEET    1              Current Active Sheet
+USERGRID     50     50      Design and Label/Text grid settings
+LINEWIDTH    10             Width items will be created with
+CONNWIDTH    10             Width used to plot connections
+BUSWIDTH     30             Width used to plot buses
+BUSANGLE     25             Angle used when plotting buses
+NNVISPWRGND  4              Pwr/Gnd netname visibility default flag
+PCBFLAGS     1059           PCB Netlist and ECO options
+PINNAMESIZE  69     10      Height and LineWidth used by pin names
+TEXTSIZE     69     10      Height and LineWidth text will be created width
+JOBTIME      0              Amount of time spent on this LOGIC design
+DOTGRID      1000           Space in thous/inch between graphic dots
+BACKUPTIME   1              Number of minutes between database backups
+TIEDOTSIZE   50             Diameter of tiedot point
+REFNAMESIZE  100    10      Height and LineWidth used by part ref. names
+PARTNAMESIZE 100    10      Height and LineWidth used by part type names
+PINNOSIZE    69     10      Height and LineWidth used by pin numbers
+NETNAMESIZE  100    10      Height and LineWidth used by net names
+REAL WIDTH   13             Widths greater then this are displayed real size
+SHEET SIZE   A3            
+JOBNAME      movision3_2.sch
+NTXCOL 11 9
+HIRCOL 14
+LINCOL 20
+TXTCOL 2 9
+CONCOL 14
+BUSCOL 14
+PTXCOL 7 9
+COMCOL 11
+NMCOL  6 9
+PNMCOL 6 9
+PINCOL 11 9
+NETCOL 13 9
+FBGCOL 12 0
+OFFREFVIEW   1              Offsheet references visibility default flag
+OFFREFNUM    0              Offsheet references per line
+SHEETNUMSEP  []             Sheet Number separators
+FONT MODE   System
+DEFAULT FONT "Regular MS UI Gothic"
+BORDER NAME SIZEB
+FIELDCOL 10 0
+
+*CAM* PLOTTER SETTINGS 
+*REMARK*    PARENT_KEYWORD PARENT_VALUE
+*REMARK*  [ { 
+*REMARK*       CHILD_KEYWORD CHILD_VALUE
+*REMARK*     [ CHILD_KEYWORD CHILD_VALUE
+*REMARK*     [ { 
+*REMARK*          GRAND_CHILD_KEYWORD GRAND_CHILD_VALUE [...] 
+*REMARK*       } ]] 
+*REMARK*    } ] 
+
+PLOT_SECTION	5.0
+{
+PLOT_DEFAULTS_PHOTO_PLOTTER	NULL
+{
+DEFAULT_FILE_PREFIX	 esp32s3-amoles-GPS1
+DEFAULT_SCALE	 1 1
+DEFAULT_ORIENTATION	 0
+DEFAULT_JUSTIFICATION	 SF
+DEFAULT_OFFSETS	 0 0
+DEFAULT_WINDOW_PLOT	 N
+DEFAULT_PLOT_JOBNAME	 N
+DEFAULT_PLOT_OLE	 N
+DEFAULT_SHEET	Current
+DEFAULT_CONNECTIONS	1
+DEFAULT_BUSSES	1
+DEFAULT_LINES	1
+DEFAULT_TEXT	1
+DEFAULT_PARTS	1
+DEFAULT_REFDES	1
+DEFAULT_PARTTYPES	1
+DEFAULT_PARTEXT	1
+DEFAULT_PINNUMBERS	1
+DEFAULT_PINNAMES	1
+DEFAULT_NETNAMES	1
+DEFAULT_HIERSYMS	1
+}
+PLOT_DEFAULTS_PEN_PLOTTER	NULL
+{
+DEFAULT_FILE_PREFIX	 esp32s3-amoles-GPS1
+DEFAULT_SCALE	 1 1
+DEFAULT_ORIENTATION	 0
+DEFAULT_JUSTIFICATION	 SF
+DEFAULT_OFFSETS	 0 0
+DEFAULT_WINDOW_PLOT	 N
+DEFAULT_PLOT_JOBNAME	 Y
+DEFAULT_PLOT_OLE	 N
+DEFAULT_SHEET	Current
+DEFAULT_CONNECTIONS	1
+DEFAULT_BUSSES	1
+DEFAULT_LINES	1
+DEFAULT_TEXT	1
+DEFAULT_PARTS	1
+DEFAULT_REFDES	1
+DEFAULT_PARTTYPES	1
+DEFAULT_PARTEXT	1
+DEFAULT_PINNUMBERS	1
+DEFAULT_PINNAMES	1
+DEFAULT_NETNAMES	1
+DEFAULT_HIERSYMS	1
+}
+PLOT_DEFAULTS_PRINTER	NULL
+{
+DEFAULT_FILE_PREFIX	 esp32s3-amoles-GPS1
+DEFAULT_SCALE	 1 1
+DEFAULT_ORIENTATION	 0
+DEFAULT_JUSTIFICATION	 SF
+DEFAULT_OFFSETS	 0 0
+DEFAULT_WINDOW_PLOT	 N
+DEFAULT_PLOT_JOBNAME	 N
+DEFAULT_PLOT_OLE	 N
+DEFAULT_SHEET	Selected
+DEFAULT_SHEET_LIST	NULL
+{
+SHEET_1	3
+}
+DEFAULT_CONNECTIONS	1
+DEFAULT_BUSSES	1
+DEFAULT_LINES	1
+DEFAULT_TEXT	1
+DEFAULT_PARTS	1
+DEFAULT_REFDES	1
+DEFAULT_PARTTYPES	1
+DEFAULT_PARTEXT	1
+DEFAULT_PINNUMBERS	1
+DEFAULT_PINNAMES	1
+DEFAULT_NETNAMES	1
+DEFAULT_HIERSYMS	1
+}
+PLOT_AUGMENT_ON_THE_FLY	Y
+}
+
+*FIELDS*    USER FIELDS
+
+"DRAWN" 
+"CHECKED" 
+"QUALITY CONTROL" 
+"RELEASED" 
+"COMPANY" Goodwill Tech
+"COMPANY ADDRESS" 
+"TITLE" Round-display
+"CODE" 
+"SCALE" 
+"DRAWING NO" 
+"REV" 0.1
+"Drawn By" 
+"Checked By" 
+"QC By" 
+"Released By" 
+"Drawn Date" 2024.04.09
+"Checked Date" 
+"QC Date" 
+"Release Date" 
+"Company Name" 
+"Drawing Number" 
+"Revision" 
+
+*SHT*   1 0.HISTROY -1 $$$NONE
+*CAE*        GENERAL PARAMETERS FOR THE SHEET"
+
+SCALE        3.891          Scale of window expansion
+WINDOWCENTER 4134   2934    Point defining the center of the window
+BITCS0       0              system status bits
+BITCS1       0              system status bits
+BITCS2       0              system status bits
+
+*TEXT*       FREE TEXT
+
+5900   10500  0   0 417  50 0 "Regular MS UI Gothic"
+Round_display REV.01
+
+*LINES*      LINES ITEMS
+
+D76208           LINES    3030   11100  1   0
+CLOSED 5   30  255
+0      0     
+0      -900  
+10350  -900  
+10350  0     
+0      0     
+DRW90414         LINES    16300  1150   20  26
+OPEN   2   20  255
+0      0     
+-5000  0     
+OPEN   2   20  255
+-5000  400   
+-5000  -1000 
+OPEN   2   20  255
+0      -800  
+-5000  -800  
+OPEN   2   20  255
+-4400  -400  
+-4400  -800  
+OPEN   2   20  255
+-600   -400  
+-600   -800  
+OPEN   2   20  255
+-1900  -800  
+-1900  -1000 
+OPEN   2   20  255
+0      -400  
+-5000  -400  
+CLOSED 5   20  255
+100    -1100 
+100    10450 
+-16150 10450 
+-16150 -1100 
+100    -1100 
+OPEN   2   20  255
+-16050 4600  
+-16150 4600  
+OPEN   2   20  255
+100    4600  
+0      4600  
+OPEN   2   20  255
+-8050  -1000 
+-8050  -1100 
+OPEN   2   20  255
+-12200 -1000 
+-12200 -1100 
+CLOSED 5   20  255
+0      -1000 
+0      10350 
+-16050 10350 
+-16050 -1000 
+0      -1000 
+OPEN   2   20  255
+-16050 1650  
+-16150 1650  
+OPEN   2   20  255
+-16050 7700  
+-16150 7700  
+OPEN   2   20  255
+100    7700  
+0      7700  
+OPEN   2   20  255
+100    1650  
+0      1650  
+OPEN   2   20  255
+-8050  -1000 
+-8050  -1100 
+OPEN   2   20  255
+-3900  -1000 
+-3900  -1100 
+OPEN   2   20  255
+0      400   
+-5000  400   
+-280   -700   0   0 153  10 1 "Regular MS UI Gothic"
+REV
+-4250  -300   0   0 250  10 1 "Regular MS UI Gothic"
+TITLE
+-4360  -960   0   0 153  10 1 "Regular MS UI Gothic"
+Drawn Date
+-4250  50     0   0 250  10 1 "Default Font"
+COMPANY
+-1200  -950   0   0 153  10 0 "Default Font"
+/
+-1400  -950   0   0 153  10 1 "Default Font"
+Sheet Number
+-550   -550   0   0 69   10 0 "Default Font"
+REV:
+-1850  -900   0   0 69   10 0 "Default Font"
+SHEET: 
+-4950  -900   0   0 69   10 0 "Default Font"
+DATED:
+-1950  -1090  0   0 69   10 0 "Default Font"
+1
+-5950  -1090  0   0 69   10 0 "Default Font"
+2
+-10350 -1090  0   0 69   10 0 "Default Font"
+3
+-14350 -1090  0   0 69   10 0 "Default Font"
+4
+20     6130   0   0 69   10 0 "Default Font"
+C
+20     3080   0   0 69   10 0 "Default Font"
+B
+20     430    0   0 69   10 0 "Default Font"
+A
+-4350  -500   0   0 69   10 0 "Default Font"
+DOCUMENT NUMBER :
+-4950  -100   0   0 69   10 0 "Default Font"
+TITLE:
+-4950  300    0   0 69   10 0 "Default Font"
+COMPANY:
+-4950  -500   0   0 69   10 0 "Default Font"
+SIZE:
+-16130 6140   0   0 69   10 0 "Default Font"
+C
+-16130 3070   0   0 69   10 0 "Default Font"
+B
+-16130 430    0   0 69   10 0 "Default Font"
+A
+-4650  -700   0   0 153  10 0 "Default Font"
+A3
+-3300  -700   0   0 194  10 1 "Default Font"
+Sheet Name
+-1050  -950   0   0 153  10 1 "Default Font"
+Number of Sheets
+
+*CAEDECAL*  ITEMS
+
+PIN              34000 34000 100 10 100 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+140 20 0 1 100 10 "Default Font"
+REF-DES
+230 0 0 8 100 10 "Default Font"
+PART-TYPE
+-520 0 0 1 100 10 "Default Font"
+*
+-80 0 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+200   0    
+
+PINB             34000 34000 100 10 100 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+230 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+140   0    
+CIRCLE 2   10  255
+140   0    
+190   0    
+
+PCLK             33500 33180 100 10 100 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+280 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+200   0    
+OPEN   3   10  255
+200   30   
+260   0    
+200   -30  
+
+PCLKB            33500 33180 100 10 100 10 4 3 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+280 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   3   10  255
+200   30   
+260   0    
+200   -30  
+OPEN   2   10  255
+0     0    
+140   0    
+CIRCLE 2   10  255
+190   0    
+140   0    
+
+PINIEB           34000 34000 100 10 100 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+220 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   4   10  255
+0     0    
+200   0    
+140   30   
+140   0    
+
+PINORB           34000 34000 100 10 100 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+300 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+180   0    
+CIRCLE 2   10  255
+230   0    
+180   0    
+
+PINSHORT         34000 34000 100 10 100 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+60 10 0 1 100 10 "Default Font"
+REF-DES
+140 10 0 8 100 10 "Default Font"
+PART-TYPE
+-530 10 0 1 100 10 "Default Font"
+*
+-70 10 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+100   0    
+
+PINVRTS          34000 34000 100 10 100 10 4 1 0 0 3 1
+"Default Font"
+"Default Font"
+20 -80 0 0 100 10 "Default Font"
+REF-DES
+-20 -40 0 9 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     -100 
+0     0    
+
+PIN10            32000 32000 100 10 100 10 2 1 0 0 0 1
+"Default Font"
+"Default Font"
+50 100 0 9 90 10 "Default Font"
+REF-DES
+0 0 0 0 0 0 "Default Font"
+PART-TYPE
+OPEN   2   1   255
+0     0    
+-100  0    
+
+GND              33500 33180 100 10 100 10 4 4 0 1 26 0
+"Default Font"
+"Default Font"
+100 -50 0 0 100 10 "Default Font"
+REF-DES
+0 200 0 0 100 10 "Default Font"
+PART-TYPE
+0 100 0 0 100 10 "Default Font"
+*
+0 0 0 0 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -100 
+OPEN   2   5   255
+-100  -100 
+100   -100 
+OPEN   2   5   255
+-60   -160 
+60    -160 
+OPEN   2   5   255
+-20   -220 
+20    -220 
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+AGND             33500 33180 100 10 100 10 4 1 0 1 26 0
+"Default Font"
+"Default Font"
+260 0 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   6   5   255
+0     0    
+0     -50  
+-100  -50  
+0     -200 
+100   -50  
+0     -50  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+CHGND            33500 33180 100 10 100 10 4 5 0 1 26 0
+"Default Font"
+"Default Font"
+264 -40 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -100 
+OPEN   2   5   255
+-100  -100 
+100   -100 
+OPEN   2   5   255
+-100  -100 
+-150  -200 
+OPEN   2   5   255
+0     -100 
+-50   -200 
+OPEN   2   5   255
+100   -100 
+50    -200 
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++5V              33500 33180 100 10 100 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 250 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 0 100 10 "Default Font"
+PART-TYPE
+0 100 0 0 100 10 "Default Font"
+*
+0 0 0 0 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     200  
+COPCLS 4   5   255
+0     200  
+-50   100  
+50    100  
+0     200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+BUBBLE           33500 33180 100 10 100 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 300 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+0     100  
+CIRCLE 2   10  255
+0     100  
+0     200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+Y                33500 33180 100 10 100 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 300 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   3   10  255
+0     0    
+0     100  
+-100  200  
+OPEN   2   10  255
+0     100  
+100   200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++12V             33500 33274 100 10 100 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+4 484 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     300  
+COPCLS 4   5   255
+0     300  
+-50   150  
+50    150  
+0     300  
+-108   356    0   0 69  10
++12V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+-5V              33500 33274 100 10 100 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+16 -520 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -300 
+COPCLS 4   5   255
+0     -300 
+50    -150 
+-50   -150 
+0     -300 
+-80    -388   0   0 69  10
+-5V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+-12V             33500 33274 100 10 100 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+8 -560 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -300 
+COPCLS 4   5   255
+0     -300 
+50    -150 
+-50   -150 
+0     -300 
+-116   -412   0   0 69  10
+-12V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++5VA             33500 33274 100 10 100 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+8 468 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+0     300  
+COPCLS 4   10  255
+0     300  
+-50   150  
+50    150  
+0     300  
+-108   336    0   0 69  10
++5VA
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+REF_BI           32000 32000 69 10 69 10 2 2 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-800 0 0 9 83 5 "Default Font"
+PART-TYPE
+CLOSED 7   10  255
+-100  0    
+-150  40   
+-250  40   
+-300  0    
+-250  -40  
+-150  -40  
+-100  0    
+OPEN   2   10  255
+-100  0    
+0     0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_BII          32000 32000 69 10 69 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+750 0 0 8 83 5 "Default Font"
+PART-TYPE
+OPEN   8   10  255
+0     0    
+100   0    
+150   40   
+250   40   
+300   0    
+250   -40  
+150   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_IN           32000 32000 100 10 100 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-850 0 0 9 83 10 "Default Font"
+PART-TYPE
+OPEN   7   5   255
+0     0    
+-100  0    
+-140  40   
+-300  40   
+-300  -40  
+-140  -40  
+-100  0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_INN          32000 32000 70 10 70 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+800 0 0 8 83 5 "Default Font"
+PART-TYPE
+OPEN   7   10  255
+0     0    
+100   0    
+150   40   
+300   40   
+300   -40  
+150   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_OUT          32000 32000 100 10 100 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+800 0 0 8 83 10 "Default Font"
+PART-TYPE
+OPEN   8   5   255
+0     0    
+100   0    
+100   40   
+260   40   
+300   0    
+260   -40  
+100   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_OUTT         32000 32000 70 10 70 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-800 0 0 9 83 5 "Default Font"
+PART-TYPE
+OPEN   8   10  255
+0     0    
+-100  0    
+-100  40   
+-250  40   
+-300  0    
+-250  -40  
+-100  -40  
+-100  0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+
+*PARTTYPE*   ITEMS
+
+$OSR_SYMS UND  6   0   2     0   0
+G:REF_BI 0 1
+1.0. 
+G:REF_BII 0 1
+2.0. 
+G:REF_IN 0 1
+3.0. 
+G:REF_INN 0 1
+4.0. 
+G:REF_OUT 0 1
+5.0. 
+G:REF_OUTT 0 1
+6.0. 
+
+$GND_SYMS UND  3   3   2     0   0
+G:GND 0 1
+1.0.G
+G:AGND 0 1
+2.0.G
+G:CHGND 0 1
+3.0.G
+SIGPIN 1.0.GND
+SIGPIN 2.0.AGND
+SIGPIN 3.0.CHGND
+
+$PWR_SYMS UND  7   7   2     0   0
+G:+5V 0 1
+1.0.P
+G:BUBBLE 0 1
+2.0.P
+G:Y 0 1
+3.0.P
+G:+12V 0 1
+4.0.P
+G:-5V 0 1
+5.0.P
+G:-12V 0 1
+6.0.P
+G:+5VA 0 1
+7.0.P
+SIGPIN 1.0.+5V
+SIGPIN 2.0.+5V
+SIGPIN 3.0.+5V
+SIGPIN 4.0.+12V
+SIGPIN 5.0.-5V
+SIGPIN 6.0.-12V
+SIGPIN 7.0.+5VA
+
+
+
+*PART*       ITEMS
+
+
+
+
+*BUSSES*
+
+
+*OFFPAGE REFS*
+
+
+*TIEDOTS*
+
+
+*CONNECTION*
+
+
+*NETNAMES*
+
+
+*SHT*   2 2.SYSTEM -1 $$$NONE
+*CAE*        GENERAL PARAMETERS FOR THE SHEET"
+
+SCALE        2.569          Scale of window expansion
+WINDOWCENTER 5155   1563    Point defining the center of the window
+BITCS0       0              system status bits
+BITCS1       0              system status bits
+BITCS2       0              system status bits
+
+*TEXT*       FREE TEXT
+
+1250   7400   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   7700   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   7500   0   9 69   10 0 "Regular MS UI Gothic"
+D0N
+1250   7600   0   9 69   10 0 "Regular MS UI Gothic"
+D0P
+1250   8000   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   7800   0   9 69   10 0 "Regular MS UI Gothic"
+CLKN
+1250   7900   0   9 69   10 0 "Regular MS UI Gothic"
+CLKP
+1250   8300   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   8100   0   9 69   10 0 "Regular MS UI Gothic"
+D1N
+1250   8200   0   9 69   10 0 "Regular MS UI Gothic"
+D1P
+1250   8400   0   9 69   10 0 "Regular MS UI Gothic"
+TE
+1250   8500   0   9 69   10 0 "Regular MS UI Gothic"
+D0
+1250   8600   0   9 69   10 0 "Regular MS UI Gothic"
+D1
+1250   8700   0   9 69   10 0 "Regular MS UI Gothic"
+WRX_SCL
+1250   8800   0   9 69   10 0 "Regular MS UI Gothic"
+DCX
+1250   8900   0   9 69   10 0 "Regular MS UI Gothic"
+SDI_RXD
+1250   9000   0   9 69   10 0 "Regular MS UI Gothic"
+CSX
+1250   9100   0   9 69   10 0 "Regular MS UI Gothic"
+ERSRT
+1250   9200   0   9 69   10 0 "Regular MS UI Gothic"
+MTP_PWR
+1250   9300   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   9400   0   9 69   10 0 "Regular MS UI Gothic"
+VCI_EN
+1250   9500   0   9 69   10 0 "Regular MS UI Gothic"
+VBAT
+1250   9600   0   9 69   10 0 "Regular MS UI Gothic"
+VCI
+1250   9700   0   9 69   10 0 "Regular MS UI Gothic"
+IOVCC
+1250   9800   0   9 69   10 0 "Regular MS UI Gothic"
+GND
+1250   9900   0   9 69   10 0 "Regular MS UI Gothic"
+TP_3.3V
+1250   10000  0   9 69   10 0 "Regular MS UI Gothic"
+TP_SCL
+1250   10100  0   9 69   10 0 "Regular MS UI Gothic"
+TP_SDA
+1250   10200  0   9 69   10 0 "Regular MS UI Gothic"
+TP_RST
+1250   10300  0   9 69   10 0 "Regular MS UI Gothic"
+TP_INT
+1250   10400  0   9 69   10 0 "Regular MS UI Gothic"
+GND
+14950  7200   0   0 111  10 0 "Regular MS UI Gothic"
+3.36V
+
+*LINES*      LINES ITEMS
+
+D65888           LINES    16300  1150   20  26
+OPEN   2   20  255
+0      0     
+-5000  0     
+OPEN   2   20  255
+-5000  400   
+-5000  -1000 
+OPEN   2   20  255
+0      -800  
+-5000  -800  
+OPEN   2   20  255
+-4400  -400  
+-4400  -800  
+OPEN   2   20  255
+-600   -400  
+-600   -800  
+OPEN   2   20  255
+-1900  -800  
+-1900  -1000 
+OPEN   2   20  255
+0      -400  
+-5000  -400  
+CLOSED 5   20  255
+100    -1100 
+100    10450 
+-16150 10450 
+-16150 -1100 
+100    -1100 
+OPEN   2   20  255
+-16050 4600  
+-16150 4600  
+OPEN   2   20  255
+100    4600  
+0      4600  
+OPEN   2   20  255
+-8050  -1000 
+-8050  -1100 
+OPEN   2   20  255
+-12200 -1000 
+-12200 -1100 
+CLOSED 5   20  255
+0      -1000 
+0      10350 
+-16050 10350 
+-16050 -1000 
+0      -1000 
+OPEN   2   20  255
+-16050 1650  
+-16150 1650  
+OPEN   2   20  255
+-16050 7700  
+-16150 7700  
+OPEN   2   20  255
+100    7700  
+0      7700  
+OPEN   2   20  255
+100    1650  
+0      1650  
+OPEN   2   20  255
+-8050  -1000 
+-8050  -1100 
+OPEN   2   20  255
+-3900  -1000 
+-3900  -1100 
+OPEN   2   20  255
+0      400   
+-5000  400   
+-4250  -300   0   0 250  10 1 "Default Font"
+TITLE
+-4360  -960   0   0 153  10 1 "Default Font"
+Drawn Date
+-280   -700   0   0 153  10 1 "Default Font"
+REV
+-1200  -950   0   0 153  10 0 "Default Font"
+/
+-1400  -950   0   0 153  10 1 "Default Font"
+Sheet Number
+-550   -550   0   0 69   10 0 "Default Font"
+REV:
+-1850  -900   0   0 69   10 0 "Default Font"
+SHEET: 
+-4950  -900   0   0 69   10 0 "Default Font"
+DATED:
+-1950  -1090  0   0 69   10 0 "Default Font"
+1
+-5950  -1090  0   0 69   10 0 "Default Font"
+2
+-10350 -1090  0   0 69   10 0 "Default Font"
+3
+-14350 -1090  0   0 69   10 0 "Default Font"
+4
+20     6130   0   0 69   10 0 "Default Font"
+C
+20     3080   0   0 69   10 0 "Default Font"
+B
+20     430    0   0 69   10 0 "Default Font"
+A
+-4350  -500   0   0 69   10 0 "Default Font"
+DOCUMENT NUMBER :
+-4950  -100   0   0 69   10 0 "Default Font"
+TITLE:
+-4950  300    0   0 69   10 0 "Default Font"
+COMPANY:
+-4950  -500   0   0 69   10 0 "Default Font"
+SIZE:
+-16130 6140   0   0 69   10 0 "Default Font"
+C
+-16130 3070   0   0 69   10 0 "Default Font"
+B
+-16130 430    0   0 69   10 0 "Default Font"
+A
+-4650  -700   0   0 153  10 0 "Default Font"
+A3
+-4250  50     0   0 250  10 1 "Default Font"
+COMPANY
+-3300  -700   0   0 194  10 1 "Default Font"
+Sheet Name
+-1050  -950   0   0 153  10 1 "Default Font"
+Number of Sheets
+
+*CAEDECAL*  ITEMS
+
+PIN              34000 34000 97 10 97 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+140 20 0 1 100 10 "Default Font"
+REF-DES
+230 0 0 8 100 10 "Default Font"
+PART-TYPE
+-520 0 0 1 100 10 "Default Font"
+*
+-80 0 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+200   0    
+
+PINB             34000 34000 97 10 97 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+230 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+140   0    
+CIRCLE 2   10  255
+140   0    
+190   0    
+
+PCLK             33500 33180 97 10 97 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+280 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+200   0    
+OPEN   3   10  255
+200   30   
+260   0    
+200   -30  
+
+PCLKB            33500 33180 97 10 97 10 4 3 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+280 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   3   10  255
+200   30   
+260   0    
+200   -30  
+OPEN   2   10  255
+0     0    
+140   0    
+CIRCLE 2   10  255
+190   0    
+140   0    
+
+PINIEB           34000 34000 97 10 97 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+220 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   4   10  255
+0     0    
+200   0    
+140   30   
+140   0    
+
+PINORB           34000 34000 97 10 97 10 4 2 0 0 0 1
+"Default Font"
+"Default Font"
+130 14 0 1 100 10 "Default Font"
+REF-DES
+300 0 0 8 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+180   0    
+CIRCLE 2   10  255
+230   0    
+180   0    
+
+PINSHORT         34000 34000 97 10 97 10 4 1 0 0 0 1
+"Default Font"
+"Default Font"
+60 10 0 1 100 10 "Default Font"
+REF-DES
+140 10 0 8 100 10 "Default Font"
+PART-TYPE
+-530 10 0 1 100 10 "Default Font"
+*
+-70 10 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+100   0    
+
+PINVRTS          34000 34000 97 10 97 10 4 1 0 0 3 1
+"Default Font"
+"Default Font"
+20 -80 0 0 100 10 "Default Font"
+REF-DES
+-20 -40 0 9 100 10 "Default Font"
+PART-TYPE
+-500 10 0 1 100 10 "Default Font"
+*
+-30 14 0 1 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     -100 
+0     0    
+
+PIN50            32000 32000 100 10 100 10 2 1 0 0 0 1
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+100 250 90 10 93 10 "Regular MS UI Gothic"
+REF-DES
+100 350 90 0 93 10 "Regular MS UI Gothic"
+PART-TYPE
+OPEN   2   1   255
+0     0    
+-100  0    
+
+PIN150           32000 32000 100 10 100 10 2 1 0 0 0 1
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+1250 5100 0 9 93 10 "Regular MS UI Gothic"
+REF-DES
+1350 5100 0 0 93 10 "Regular MS UI Gothic"
+PART-TYPE
+OPEN   2   1   255
+0     0    
+-300  0    
+
+GND              33500 33180 97 10 97 10 4 4 0 1 26 0
+"Default Font"
+"Default Font"
+100 -50 0 0 100 10 "Default Font"
+REF-DES
+0 200 0 0 100 10 "Default Font"
+PART-TYPE
+0 100 0 0 100 10 "Default Font"
+*
+0 0 0 0 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -100 
+OPEN   2   5   255
+-100  -100 
+100   -100 
+OPEN   2   5   255
+-60   -160 
+60    -160 
+OPEN   2   5   255
+-20   -220 
+20    -220 
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+AGND             33500 33180 97 10 97 10 4 1 0 1 26 0
+"Default Font"
+"Default Font"
+260 0 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   6   5   255
+0     0    
+0     -50  
+-100  -50  
+0     -200 
+100   -50  
+0     -50  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+CHGND            33500 33180 97 10 97 10 4 5 0 1 26 0
+"Default Font"
+"Default Font"
+264 -40 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -100 
+OPEN   2   5   255
+-100  -100 
+100   -100 
+OPEN   2   5   255
+-100  -100 
+-150  -200 
+OPEN   2   5   255
+0     -100 
+-50   -200 
+OPEN   2   5   255
+100   -100 
+50    -200 
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++5V              33500 33180 97 10 97 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 250 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 0 100 10 "Default Font"
+PART-TYPE
+0 100 0 0 100 10 "Default Font"
+*
+0 0 0 0 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     200  
+COPCLS 4   5   255
+0     200  
+-50   100  
+50    100  
+0     200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+BUBBLE           33500 33180 97 10 97 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 300 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+0     100  
+CIRCLE 2   10  255
+0     100  
+0     200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+Y                33500 33180 97 10 97 10 4 2 0 1 26 0
+"Default Font"
+"Default Font"
+0 300 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   3   10  255
+0     0    
+0     100  
+-100  200  
+OPEN   2   10  255
+0     100  
+100   200  
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++12V             33500 33274 97 10 97 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+4 484 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     300  
+COPCLS 4   5   255
+0     300  
+-50   150  
+50    150  
+0     300  
+-108   356    0   0 69  10
++12V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+-5V              33500 33274 97 10 97 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+16 -520 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -300 
+COPCLS 4   5   255
+0     -300 
+50    -150 
+-50   -150 
+0     -300 
+-80    -388   0   0 69  10
+-5V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+-12V             33500 33274 97 10 97 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+8 -560 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   5   255
+0     0    
+0     -300 
+COPCLS 4   5   255
+0     -300 
+50    -150 
+-50   -150 
+0     -300 
+-116   -412   0   0 69  10
+-12V
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
++5VA             33500 33274 97 10 97 10 4 2 1 1 26 0
+"Default Font"
+"Default Font"
+8 468 0 4 100 10 "Default Font"
+REF-DES
+0 200 0 6 100 10 "Default Font"
+PART-TYPE
+0 100 0 6 100 10 "Default Font"
+*
+0 0 0 6 100 10 "Default Font"
+*
+OPEN   2   10  255
+0     0    
+0     300  
+COPCLS 4   10  255
+0     300  
+-50   150  
+50    150  
+0     300  
+-108   336    0   0 69  10
++5VA
+T0     0     0 0 0 0 0 0 0 0 0 8 
+P0 0 0 0 0 0 0 0 128
+
+REF_BI           32000 32000 69 10 69 10 2 2 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-800 0 0 9 83 5 "Default Font"
+PART-TYPE
+CLOSED 7   10  255
+-100  0    
+-150  40   
+-250  40   
+-300  0    
+-250  -40  
+-150  -40  
+-100  0    
+OPEN   2   10  255
+-100  0    
+0     0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_BII          32000 32000 69 10 69 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+750 0 0 8 83 5 "Default Font"
+PART-TYPE
+OPEN   8   10  255
+0     0    
+100   0    
+150   40   
+250   40   
+300   0    
+250   -40  
+150   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_IN           32000 32000 100 10 100 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-850 0 0 9 83 10 "Default Font"
+PART-TYPE
+OPEN   7   5   255
+0     0    
+-100  0    
+-140  40   
+-300  40   
+-300  -40  
+-140  -40  
+-100  0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_INN          32000 32000 70 10 70 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+800 0 0 8 83 5 "Default Font"
+PART-TYPE
+OPEN   7   10  255
+0     0    
+100   0    
+150   40   
+300   40   
+300   -40  
+150   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_OUT          32000 32000 100 10 100 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+400 0 0 8 83 10 "Default Font"
+REF-DES
+800 0 0 8 83 10 "Default Font"
+PART-TYPE
+OPEN   8   5   255
+0     0    
+100   0    
+100   40   
+260   40   
+300   0    
+260   -40  
+100   -40  
+100   0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+REF_OUTT         32000 32000 70 10 70 10 2 1 0 1 24 0
+"Default Font"
+"Default Font"
+-400 0 0 9 83 10 "Default Font"
+REF-DES
+-800 0 0 9 83 5 "Default Font"
+PART-TYPE
+OPEN   8   10  255
+0     0    
+-100  0    
+-100  40   
+-250  40   
+-300  0    
+-250  -40  
+-100  -40  
+-100  0    
+T0     0     0 0 0 0 0 0 0 0 0 0 
+P0 0 0 0 0 0 0 0 0
+
+ESP32-S3         32000 32000 69 10 69 10 4 1 0 57 0 0
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+600 700 0 4 69 10 "Regular MS UI Gothic"
+REF-DES
+600 600 0 6 69 10 "Regular MS UI Gothic"
+PART-TYPE
+600 500 0 6 69 10 "Regular MS UI Gothic"
+*
+600 400 0 6 69 10 "Regular MS UI Gothic"
+*
+CLOSED 5   10  255
+100   -3700
+100   100  
+1800  100  
+1800  -3700
+100   -3700
+T0     -300  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -100  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -400  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -600  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2200 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2300 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2400 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2600 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2700 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2800 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2900 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -800  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -900  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1050 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1150 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1250 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1350 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1450 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -300  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1800 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2000 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1600 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2100 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -500  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -600  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1900 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2000 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1700 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1600 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1500 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1400 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1300 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1200 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -1100 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -3100 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -3000 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3100 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3200 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3300 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3400 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3500 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3600 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2250 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2350 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -200  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2450 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2550 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -900  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -800  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2750 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -2850 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -3600 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -3300 0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  -100  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1900  0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T900   -3800 90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+CAP_NPH          32000 32000 69 10 69 10 4 4 0 2 26 0
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-100 -200 0 0 0 10 "Regular MS UI Gothic"
+Source Path
+-50 -100 90 8 69 10 "Regular MS UI Gothic"
+Value
+OPEN   2   10  255
+-50   -120 
+50    -120 
+OPEN   2   10  255
+-50   -180 
+50    -180 
+OPEN   2   10  255
+0     -100 
+0     -120 
+OPEN   2   10  255
+0     -200 
+0     -180 
+T0     0     90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T0     -300  90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+OSC-3225         31460 32390 97 10 97 10 4 5 0 4 0 0
+"Default Font"
+"Default Font"
+40 110 0 3 83 0 "Default Font"
+REF-DES
+540 -390 0 0 0 0 "Default Font"
+PART-TYPE
+540 -390 0 0 0 10 "Default Font"
+Source Path
+240 110 0 2 83 10 "Default Font"
+Value
+OPEN   2   10  255
+130   100  
+130   -100 
+OPEN   2   10  255
+270   -100 
+270   100  
+CLOSED 5   10  255
+170   -100 
+170   100  
+230   100  
+230   -100 
+170   -100 
+OPEN   2   10  255
+100   0    
+130   0    
+OPEN   2   10  255
+300   0    
+270   0    
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T200   -200  90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T400   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T200   200   90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+IND1005          32000 32000 100 10 100 10 4 2 0 2 26 0
+"Default Font"
+"Default Font"
+50 50 0 9 83 10 "Default Font"
+REF-DES
+250 250 0 6 100 10 "Default Font"
+PART-TYPE
+350 50 0 8 83 10 "Default Font"
+VALUE
+250 -200 0 6 100 10 "Default Font"
+SPIL PART#
+OPEN   2   5   255
+100   0     1777  -1754 100   -52   200   48   
+200   0    
+OPEN   2   5   255
+200   0     1777  -1754 200   -52   300   48   
+300   0    
+T0     0     0 0 70 30 0 1 170 -30 0 8 PINSHORT
+P-500 10 0 1 -70 10 0 1 0
+T400   0     0 1 60 30 0 1 170 -30 0 8 PINSHORT
+P-500 10 0 1 -70 10 0 1 0
+
+RES_S            32000 32000 100 10 100 10 4 4 0 2 26 0
+"Default Font"
+"Default Font"
+50 -100 90 8 69 0 "Regular Ebrima"
+REF-DES
+-100 -290 0 0 0 0 "Default Font"
+PART-TYPE
+-100 -290 0 0 0 10 "Default Font"
+Source Path
+50 -300 90 10 69 10 "Regular Ebrima"
+Value
+OPEN   2   10  255
+0     -290 
+30    -260 
+OPEN   2   10  255
+30    -260 
+-30   -200 
+OPEN   2   10  255
+-30   -200 
+30    -140 
+OPEN   3   10  255
+30    -140 
+0     -110 
+0     -100 
+T0     0     90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T0     -390  90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+W25Q32           32000 32000 97 10 97 10 4 1 0 8 2 0
+"Default Font"
+"Default Font"
+200 150 0 4 97 10 "Default Font"
+REF-DES
+600 200 0 6 97 10 "Default Font"
+PART-TYPE
+650 200 0 6 97 10 "Default Font"
+*
+650 200 0 6 97 10 "Default Font"
+*
+CLOSED 5   10  255
+100   -600 
+100   100  
+900   100  
+900   -600 
+100   -600 
+T1000  -500  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1000  -200  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1000  -100  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -500  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1000  -300  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1000  -400  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T1000  0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+C1608            32000 32000 100 10 100 10 4 4 0 2 26 0
+"Default Font"
+"Default Font"
+190 -190 0 0 90 0 "Default Font"
+REF-DES
+-100 -200 0 0 0 0 "Default Font"
+PART-TYPE
+-100 -200 0 0 0 10 "Default Font"
+Source Path
+190 -280 0 0 90 10 "Default Font"
+Value
+OPEN   2   10  255
+0     -200 
+0     -180 
+OPEN   2   10  255
+-90   -130 
+90    -130 
+OPEN   2   10  255
+-90   -180 
+90    -180 
+OPEN   2   10  255
+0     -100 
+0     -130 
+T0     0     90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T0     -300  90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+FPC-31-03P       32000 32000 69 10 69 10 4 1 0 33 10 0
+"Default Font"
+"Default Font"
+400 -300 0 4 69 10 "Default Font"
+REF-DES
+400 -2640 0 6 69 10 "Default Font"
+PART-TYPE
+400 -400 0 6 69 10 "Default Font"
+*
+400 -500 0 6 69 10 "Default Font"
+*
+CLOSED 5   10  255
+100   100  
+100   -3100
+600   -3100
+600   100  
+100   100  
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -100  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -200  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -300  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -400  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -500  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -600  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -700  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -800  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -900  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1000 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1100 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1200 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1300 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1400 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1500 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1600 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1700 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1800 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -1900 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2000 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2100 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2200 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2300 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2400 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2500 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2600 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2700 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2800 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -2900 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -3000 0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T350   200   90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T350   -3200 90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+IND201610        32000 32000 100 10 100 10 4 4 0 2 2 0
+"Default Font"
+"Default Font"
+-50 50 0 9 80 0 "Default Font"
+REF-DES
+0 -500 0 0 0 0 "Default Font"
+PART-TYPE
+-150 -50 90 0 0 10 "Default Font"
+Source Path
+450 50 0 8 80 10 "Default Font"
+Value
+OPEN   2   10  255
+150   50    900   900   100   -50   200   50   
+100   0    
+OPEN   2   10  255
+200   0     0     900   100   -50   200   50   
+150   50   
+OPEN   2   10  255
+250   50    900   900   200   -50   300   50   
+200   0    
+OPEN   2   10  255
+300   0     0     900   200   -50   300   50   
+250   50   
+T0     0     0 2 60 10 0 1 0 -50 0 10 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T400   0     0 1 60 10 0 1 0 -50 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+TP_S08           32000 32000 69 10 83 10 4 1 0 1 26 0
+"Default Font"
+"Default Font"
+0 350 0 12 69 10 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 12 69 10 "Regular MS UI Gothic"
+*
+-50 -100 90 12 69 10 "Regular MS UI Gothic"
+*
+CIRCLE 2   10  255
+0     200  
+0     100  
+T0     0     90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+TP_S03           32000 32000 69 10 83 10 4 1 0 1 26 0
+"Default Font"
+"Default Font"
+0 350 0 12 69 10 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 12 69 10 "Regular MS UI Gothic"
+*
+-50 -100 90 12 69 10 "Regular MS UI Gothic"
+*
+CIRCLE 2   10  255
+0     200  
+0     100  
+T0     0     90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+HOLE-2.0_P3.6    32000 32000 100 10 100 10 4 1 0 1 18 0
+"Default Font"
+"Default Font"
+0 -150 0 4 100 10 "Default Font"
+REF-DES
+0 -250 0 6 100 10 "Default Font"
+PART-TYPE
+0 -350 0 6 100 10 "Default Font"
+*
+0 -450 0 6 100 10 "Default Font"
+*
+CLOSED 5   5   255
+0     50   
+0     -50  
+100   -50  
+100   50   
+0     50   
+T-200  0     0 0 140 20 0 1 230 0 0 8 PIN
+P-520 0 0 1 -80 0 0 1 0
+
+LDR3624          32000 32000 97 10 97 10 4 10 0 2 24 0
+"Default Font"
+"Default Font"
+100 -190 0 0 83 0 "Default Font"
+REF-DES
+-100 -400 0 0 0 0 "Default Font"
+PART-TYPE
+-100 -400 0 0 0 10 "Default Font"
+Source Path
+100 -290 0 0 83 10 "Default Font"
+Value
+OPEN   2   10  255
+0     -400 
+30    -370 
+OPEN   2   10  255
+30    -370 
+-30   -310 
+OPEN   2   10  255
+-30   -310 
+30    -250 
+OPEN   2   10  255
+30    -250 
+-30   -190 
+OPEN   2   10  255
+-30   -190 
+30    -130 
+OPEN   2   10  255
+30    -130 
+0     -100 
+OPEN   4   12  255
+-60   -180 
+-110  -230 
+-110  -130 
+-60   -180 
+OPEN   2   12  255
+-110  -180 
+-210  -180 
+OPEN   4   12  255
+-60   -310 
+-110  -360 
+-110  -260 
+-60   -310 
+OPEN   2   12  255
+-110  -310 
+-210  -310 
+T0     0     90 2 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T0     -500  90 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+CON_POGO_4P      32000 32000 97 10 97 10 4 7 0 4 0 0
+"Default Font"
+"Default Font"
+250 200 0 4 97 10 "Default Font"
+REF-DES
+250 -500 0 6 97 10 "Default Font"
+PART-TYPE
+250 -600 0 6 97 10 "Default Font"
+*
+250 -700 0 6 97 10 "Default Font"
+*
+CLOSED 5   10  255
+100   -450 
+100   150  
+350   150  
+350   -450 
+100   -450 
+CIRCLE 2   10  255
+220   -20  
+180   20   
+CIRCLE 2   10  255
+220   -120 
+180   -80  
+CIRCLE 2   10  255
+220   -220 
+180   -180 
+CIRCLE 2   10  255
+220   -320 
+180   -280 
+CLOSED 5   10  255
+260   120  
+260   60   
+180   60   
+180   120  
+260   120  
+CLOSED 5   10  255
+180   -420 
+180   -360 
+260   -360 
+260   -420 
+180   -420 
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -100  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -200  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -300  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+CHIP1810         32000 32000 97 10 97 10 4 3 0 2 2 0
+"Default Font"
+"Default Font"
+50 150 0 4 97 10 "Default Font"
+REF-DES
+600 150 0 4 97 10 "Default Font"
+PART-TYPE
+300 -150 0 6 97 10 "Default Font"
+*
+300 -250 0 6 97 10 "Default Font"
+*
+CLOSED 5   10  255
+100   -100 
+100   100  
+500   100  
+500   -100 
+100   -100 
+OPEN   4   10  255
+250   50   
+350   50   
+300   0    
+250   50   
+OPEN   2   10  255
+300   0    
+300   -50  
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T600   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+DIODE_SCHOTTKY   32000 32000 69 10 69 10 4 8 0 2 26 0
+"Default Font"
+"Default Font"
+0 0 0 1 69 0 "Default Font"
+REF-DES
+0 -100 0 0 0 0 "Default Font"
+PART-TYPE
+0 -100 0 0 0 10 "Default Font"
+Source Path
+300 0 0 0 69 10 "Default Font"
+Value
+OPEN   2   10  255
+200   70   
+200   -70  
+OPEN   2   10  255
+0     0    
+100   0    
+OPEN   2   10  255
+200   0    
+300   0    
+OPEN   2   10  255
+200   70   
+150   70   
+OPEN   2   10  255
+200   -70  
+250   -70  
+COPCLS 5   10  255
+200   0    
+200   0    
+100   -70  
+100   70   
+200   0    
+OPEN   2   10  255
+250   -70  
+250   -50  
+OPEN   2   10  255
+150   70   
+150   50   
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T300   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+LMR544XX         32000 32000 69 10 69 10 4 1 0 6 0 0
+"Default Font"
+"Default Font"
+200 150 0 12 69 10 "Default Font"
+REF-DES
+400 -550 0 12 69 10 "Default Font"
+PART-TYPE
+400 -650 0 12 69 10 "Default Font"
+*
+400 -750 0 12 69 10 "Default Font"
+*
+CLOSED 5   10  255
+100   -500 
+100   100  
+700   100  
+700   -500 
+100   -500 
+T800   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -400  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T800   -400  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -200  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T800   -200  0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+1.5SMC43A        32000 32000 100 10 100 10 4 6 0 2 26 0
+"Default Font"
+"Default Font"
+0 110 0 0 90 0 "Default Font"
+REF-DES
+0 -100 0 0 0 0 "Default Font"
+PART-TYPE
+0 -100 0 0 0 10 "Default Font"
+Source Path
+50 -200 0 0 90 10 "Default Font"
+Value
+OPEN   2   10  255
+200   70   
+200   -70  
+OPEN   2   10  255
+0     0    
+100   0    
+OPEN   2   10  255
+200   0    
+300   0    
+COPCLS 5   10  255
+200   0    
+200   0    
+100   -70  
+100   70   
+200   0    
+OPEN   2   10  255
+200   70   
+180   70   
+OPEN   2   10  255
+200   -70  
+220   -70  
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+T300   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-100 0 0 1 -100 0 0 1 0
+
+CON_2P           32000 32000 97 10 97 10 4 1 0 2 0 0
+"Default Font"
+"Default Font"
+250 350 0 4 97 10 "Default Font"
+REF-DES
+250 300 0 6 97 10 "Default Font"
+PART-TYPE
+250 200 0 6 97 10 "Default Font"
+*
+250 200 0 6 97 10 "Default Font"
+*
+CLOSED 5   10  255
+100   -300 
+100   100  
+400   100  
+400   -300 
+100   -300 
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+T0     -200  0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-530 10 0 1 -70 10 0 1 0
+
+HOLE_1.2         31800 32000 100 10 100 10 4 2 0 1 18 0
+"Default Font"
+"Default Font"
+200 -150 0 4 100 10 "Default Font"
+REF-DES
+200 -250 0 6 100 10 "Default Font"
+PART-TYPE
+200 -350 0 6 100 10 "Default Font"
+*
+200 -450 0 6 100 10 "Default Font"
+*
+CLOSED 5   5   255
+200   50   
+200   -50  
+300   -50  
+300   50   
+200   50   
+CIRCLE 2   5   255
+250   50   
+250   -50  
+T0     0     0 0 140 20 0 1 230 0 0 8 PIN
+P-520 0 0 1 -80 0 0 1 0
+
+V1005            32000 32000 100 10 100 10 2 6 0 2 18 0
+"Default Font"
+"Default Font"
+50 50 0 9 83 10 "Default Font"
+REF-DES
+170 200 0 6 100 10 "Default Font"
+PART-TYPE
+COPCLS 4   10  255
+152   0    
+188   36   
+188   -36  
+152   0    
+COPCLS 4   10  255
+138   0    
+102   36   
+102   -36  
+138   0    
+OPEN   2   10  255
+140   18   
+140   -22  
+OPEN   2   10  255
+150   28   
+150   -12  
+OPEN   2   10  255
+130   -32  
+150   -12  
+OPEN   2   10  255
+140   18   
+160   38   
+T0     0     0 0 60 10 0 1 140 10 0 8 PINSHORT
+P-520 0 0 1 -80 0 0 1 0
+T290   0     0 1 60 10 0 1 140 10 0 8 PINSHORT
+P-520 0 0 1 -80 0 0 1 0
+
+
+*PARTTYPE*   ITEMS
+
+$OSR_SYMS UND  6   0   2     0   0
+G:REF_BI 0 1
+1.0. 
+G:REF_BII 0 1
+2.0. 
+G:REF_IN 0 1
+3.0. 
+G:REF_INN 0 1
+4.0. 
+G:REF_OUT 0 1
+5.0. 
+G:REF_OUTT 0 1
+6.0. 
+
+$GND_SYMS UND  3   3   2     0   0
+G:GND 0 1
+1.0.G
+G:AGND 0 1
+2.0.G
+G:CHGND 0 1
+3.0.G
+SIGPIN 1.0.GND
+SIGPIN 2.0.AGND
+SIGPIN 3.0.CHGND
+
+$PWR_SYMS UND  7   7   2     0   0
+G:+5V 0 1
+1.0.P
+G:BUBBLE 0 1
+2.0.P
+G:Y 0 1
+3.0.P
+G:+12V 0 1
+4.0.P
+G:-5V 0 1
+5.0.P
+G:-12V 0 1
+6.0.P
+G:+5VA 0 1
+7.0.P
+SIGPIN 1.0.+5V
+SIGPIN 2.0.+5V
+SIGPIN 3.0.+5V
+SIGPIN 4.0.+12V
+SIGPIN 5.0.-5V
+SIGPIN 6.0.-12V
+SIGPIN 7.0.+5VA
+
+ESP32-S3 UND  1   0   0     0   0
+G:ESP32-S3 0 57
+1.0.U.LNA_IN
+2.0.U.VDD3P3
+3.0.U.VDD3P3
+4.0.U.CHIP_PU
+5.0.U.RESET/GPIO0
+6.0.U.GPIO1
+7.0.U.GPIO2
+8.0.U.GPIO3
+9.0.U.GPIO4
+10.0.U.GPIO5
+11.0.U.GPIO6
+12.0.U.GPIO7
+13.0.U.GPIO8
+14.0.U.GPIO9
+15.0.U.GPIO10
+16.0.U.GPIO11
+17.0.U.GPIO12
+18.0.U.GPIO13
+19.0.U.GPIO14
+20.0.U.VDD3P3_RTC
+21.0.U.GPIO15/XTAL_32K_P
+22.0.U.GPIO16/XTAL_32K_N
+23.0.U.GPIO17
+24.0.U.GPIO18
+25.0.U.GPIO19
+26.0.U.GPIO20
+27.0.U.GPIO21
+28.0.U.SPICS1
+29.0.U.VDD_SPI
+30.0.U.SPIHD
+31.0.U.SPIWP
+32.0.U.SPICSO
+33.0.U.SPICLK
+34.0.U.SPIQ
+35.0.U.SPID
+36.0.U.SPI_CLK_N
+37.0.U.SPI_CLK_P
+38.0.U.NC_GPIO33
+39.0.U.NC_GPIO34
+40.0.U.NC_GPIO35
+41.0.U.NC_GPIO36
+42.0.U.NC_GPIO37
+43.0.U.GPIO38
+44.0.U.GPIO39/MTCK
+45.0.U.GPIO40/MTDO
+46.0.U.VDD3P3_CPU
+47.0.U.GPIO41/MTDI
+48.0.U.GPIO42/MTMS
+49.0.U.U0TXD
+50.0.U.U0RXT
+51.0.U.GPIO45
+52.0.U.GPIO46
+53.0.U.XTAL_N
+54.0.U.XTAL_P
+55.0.U.VDDA
+56.0.U.VDDA
+57.0.U.EP
+
+CAP1005A UND  1   0   0     0   0
+G:CAP_NPH 0 2
+1.-1.S.1
+2.-1.S.2
+
+OSC-3225 UND  1   0   0     0   0
+G:OSC-3225 0 4
+1.-1.S.1
+2.-1.S.2
+3.-1.S.3
+4.-1.S.4
+
+IND1005 IND  1   0   0     0   0
+G:IND1005 0 2
+1.0.U
+2.0.U
+
+RES_S UND  1   0   0     0   0
+G:RES_S 0 2
+1.-1.S.1
+2.-1.S.2
+
+W25Q32 UND  1   0   0     0   0
+G:W25Q32 0 8
+1.0.U.\CS
+2.0.U.SO
+3.0.U.\WP
+4.0.U.GND
+5.0.U.SI
+6.0.U.SCK
+7.0.U.\HOLD
+8.0.U.VCC
+
+CAP1608 UND  1   0   0     0   0
+G:C1608 0 2
+1.-1.S.1
+2.-1.S.2
+
+FPC-31-03P UND  1   0   0     0   0
+G:FPC-31-03P 0 33
+1.0.U
+2.0.U
+3.0.U
+4.0.U
+5.0.U
+6.0.U
+7.0.U
+8.0.U
+9.0.U
+10.0.U
+11.0.U
+12.0.U
+13.0.U
+14.0.U
+15.0.U
+16.0.U
+17.0.U
+18.0.U
+19.0.U
+20.0.U
+21.0.U
+22.0.U
+23.0.U
+24.0.U
+25.0.U
+26.0.U
+27.0.U
+28.0.U
+29.0.U
+30.0.U
+31.0.U
+32.0.U
+33.0.U
+
+IND201610 UND  1   0   0     0   0
+G:IND201610 0 2
+1.-1.S.1
+2.-1.S.2
+
+TP_S08 UND  1   0   0     0   0
+G:TP_S08 0 1
+1.0.U
+
+TP_S03 UND  1   0   0     0   0
+G:TP_S03 0 1
+1.0.U
+
+HOLE-2.0_P3.6 TP   1   0   0     0   0
+G:HOLE-2.0_P3.6 0 1
+1.0.U
+
+LDR3624 UND  1   0   0     0   0
+G:LDR3624 0 2
+1.-1.S.1
+2.-1.S.2
+
+CON_4P UND  1   0   0     0   0
+G:CON_POGO_4P 0 4
+1.0.U
+2.0.U
+3.0.U
+4.0.U
+
+ANT_1810 UND  1   0   0     0   0
+G:CHIP1810 0 2
+1.0.U
+2.0.U
+
+1N5819HW UND  1   0   0     0   0
+G:DIODE_SCHOTTKY 0 2
+1.-1.S.ANODE
+2.-1.S.CATHODE
+
+LMR544XX UND  1   0   0     0   0
+G:LMR544XX 0 6
+1.0.U.CB
+2.0.U.GND
+3.0.U.FB
+4.0.U.EN
+5.0.U.VIN
+6.0.U.SW
+
+1.5SMC43A UND  1   0   0     0   0
+G:1.5SMC43A 0 2
+1.-1.S.ANODE
+2.-1.S.CATHODE
+
+PH2.0-2P UND  1   0   0     0   0
+G:CON_2P 0 2
+1.0.U.+
+2.0.U.-
+
+HOLE_1.2 TP   1   0   0     0   0
+G:HOLE_1.2 0 1
+1.0.U
+
+ULCE0505 UND  1   0   0     0   0
+G:V1005 0 2
+1.0.U
+2.0.U
+
+
+
+*PART*       ITEMS
+
+
+
+U1           ESP32-S3         5600  6300    0 0 69 10 69 10 4 10 57 0 0 0
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+600 700 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+600 600 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+600 500 0 6 69 10 0 "Regular MS UI Gothic"
+*
+600 400 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Vendor" ANY
+"Value" ESP32-S3R8
+"PCB Footprint" 0.5mm
+"Part Name" IC SoC
+"Option" 0
+"Manufacturer" ESPRESSIF
+"Description" ESP32-S3R8
+"Cost State" $
+"Cost" 1.8
+"PCB DECAL" QFN40P700X700X90-57N
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+4 60 10 0 1
+5 60 10 0 1
+6 60 10 0 1
+7 60 10 0 1
+8 60 10 0 1
+9 60 10 0 1
+10 60 10 0 1
+11 60 10 0 1
+12 60 10 0 1
+13 60 10 0 1
+14 60 10 0 1
+15 60 10 0 1
+16 60 10 0 1
+17 60 10 0 1
+18 60 10 0 1
+19 60 10 0 1
+20 60 10 0 1
+21 60 10 0 1
+22 60 10 0 1
+23 60 10 0 1
+24 60 10 0 1
+25 60 10 0 1
+26 60 10 0 1
+27 60 10 0 1
+28 60 10 0 1
+29 60 10 0 1
+30 60 10 0 1
+31 60 10 0 1
+32 60 10 0 1
+33 60 10 0 1
+34 60 10 0 1
+35 60 10 0 1
+36 60 10 0 1
+37 60 10 0 1
+38 60 10 0 1
+39 60 10 0 1
+40 60 10 0 1
+41 60 10 0 1
+42 60 10 0 1
+43 60 10 0 1
+44 60 10 0 1
+45 60 10 0 1
+46 60 10 0 1
+47 60 10 0 1
+48 60 10 0 1
+49 60 10 0 1
+50 60 10 0 1
+51 60 10 0 1
+52 60 10 0 1
+53 60 10 0 1
+54 60 10 0 1
+55 60 10 0 1
+56 60 10 0 1
+
+C20          CAP1005A         8700  2600    0 1 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 1.16
+"Value" 18pF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 COG 50V 18pF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C19          CAP1005A         7900  2600    0 1 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 1.16
+"Value" 18pF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 COG 50V 18pF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+X2           OSC-3225         8500  2700    0 1 69 10 69 10 3 10 4 0 0 10
+"Default Font"
+"Default Font"
+450 -150 0 3 69 0 0 "Default Font"
+REF-DES
+540 -390 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+250 -250 0 2 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Value" 40MHz
+"PCB Footprint" SMD3225
+"Part Name" CRYSTAL UNIT
+"Option" 0
+"Manufacturer" YOKETEN / SUNNY
+"Description" SMD3225 40MHz Crystal 9pF
+"Cost State" \
+"Cost" 140
+"PCB DECAL" OSC-3225
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+
+L4           IND1005          7950  3000    0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 50 0 9 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" L1005
+"Part Name" CHIP IND
+"Manufacturer" Chilisin
+"Cost State" \
+"Value" 22nH
+"Cost" 50
+"Description" CLH1005T-24N-S
+"Vendor" ANY
+"Option" 0
+"PCB DECAL" L1005
+0 70 30 0 1
+1 60 30 0 1
+
+C11          CAP1005A         4800  7350    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -200 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Default Font"
+Value
+"PCB Footprint" C1005
+"Cost" 1.16
+"Value" NC
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 COG 50V 18pF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+R3           RES_S            5000  7450   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -400 90 8 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 0R
+"Cost State" \
+"Description" 1005 5% 1/16W 0R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+C12          CAP1005A         5600  7350    0 1 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 1.16
+"Value" NC
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 COG 50V 18pF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+U4           W25Q32           13500 3300    0 0 69 10 69 10 4 10 8 0 0 2
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+200 150 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+600 200 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+650 200 0 6 69 10 1 "Default Font"
+Value
+650 200 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"PCB DECAL" SOIC8-208MIL
+"Cost" 0.80
+"Cost State" $
+"Description" Serial NOR Flash 128Mbit QSPI
+"Manufacturer" WINBOND
+"Option" 0
+"Part Name" IC MEMORY FLASH
+"PCB Footprint" SOIC8
+"Value" W25Q128JVSIQ
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+4 60 10 0 1
+5 60 10 0 1
+6 60 10 0 1
+7 60 10 0 1
+
+C22          CAP1608          13100 3150    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -350 90 0 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 0 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Part Name" CHIP CAP
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Description" 1608 YUV 6.3V 22uF
+"Cost State" \
+"Value" 22uF
+"Cost" 7
+"PCB Footprint" C1608
+"PCB DECAL" C1608
+0 60 10 0 1
+1 60 10 0 1
+
+C4           CAP1005A         14350 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 1uF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 YUV 10V 1uF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C5           CAP1005A         14600 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 1uF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 YUV 10V 1uF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C6           CAP1005A         14900 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 1uF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 YUV 10V 1uF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C7           CAP1005A         15150 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 1uF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 YUV 10V 1uF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C3           CAP1608          14050 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -350 90 0 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 0 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Part Name" CHIP CAP
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Description" 1608 YUV 6.3V 22uF
+"Cost State" \
+"Value" 22uF
+"Cost" 7
+"PCB Footprint" C1608
+"PCB DECAL" C1608
+0 60 10 0 1
+1 60 10 0 1
+
+C1           CAP1608          5850  9800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+100 0 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+100 -400 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB DECAL" C1608
+"Value" 22uF
+"PCB Footprint" C1608
+"Cost" 7
+"Cost State" \
+"Description" 1608 YUV 6.3V 22uF
+"Option" 0
+"Manufacturer" SAMSUNG / WALSIN
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+L1           IND1005          6100  10300   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 50 0 9 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" L1005
+"Part Name" CHIP IND
+"Manufacturer" Chilisin
+"Cost State" \
+"Value" 2.0nH
+"Cost" 50
+"Description" CLH1005T-2N0-F
+"Vendor" ANY
+"Option" 0
+"PCB DECAL" L1005
+0 70 30 0 1
+1 60 30 0 1
+
+R1           RES_S            10150 9800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 10K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 10K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+C16          CAP1608          14850 6850    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -350 90 0 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 0 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Part Name" CHIP CAP
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Description" 1608 YUV 6.3V 22uF
+"Cost State" \
+"Value" 22uF
+"Cost" 7
+"PCB Footprint" C1608
+"PCB DECAL" C1608
+0 60 10 0 1
+1 60 10 0 1
+
+R4           RES_S            14300 6750    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+150 -200 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+150 -250 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 120K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 120K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R5           RES_S            14300 6250    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+150 -150 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+150 -200 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 37.9K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 37.9K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+C15          CAP1005A         14550 7150    0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 1.16
+"Value" 18pF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 COG 50V 18pF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+C13          CAP1608          11900 7250   90 1 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -350 90 0 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 0 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Part Name" CHIP CAP
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Description" 1608 YUV 50V 1uF
+"Cost State" \
+"Value" 1uF/50V
+"Cost" 7
+"PCB Footprint" C1608
+"PCB DECAL" C1608
+0 60 10 0 1
+1 60 10 0 1
+
+L3           IND201610        13750 7250    0 0 69 10 69 10 3 11 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 50 0 9 69 0 0 "Regular MS UI Gothic"
+REF-DES
+0 -500 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" L404020
+"Cost" 50
+"Value" 15uH
+"Cost State" \
+"Description" FTC404020S150MGCA
+"Manufacturer" SZ CJIANG
+"Option" 0
+"Part Name" CHIP IND
+"Vendor" ANY
+"PCB DECAL" IND4040
+"Geometry.Height" 1.0mm
+0 60 10 0 1
+1 60 10 0 1
+
+C23          CAP1608          2500  1450    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+-50 -350 90 0 69 0 0 "Default Font"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 0 69 10 3 "Default Font"
+Value
+"Vendor" ANY
+"Part Name" CHIP CAP
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Description" 1608 YUV 50V 1uF
+"Cost State" \
+"Value" 1uF/50V
+"Cost" 7
+"PCB Footprint" C1608
+"PCB DECAL" C1608
+0 60 10 0 1
+1 60 10 0 1
+
+R15          RES_S            4900  5400   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R16          RES_S            4900  5250   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R9           RES_S            4900  5150   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R10          RES_S            4900  5050   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R11          RES_S            4900  4950   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R12          RES_S            4900  4850   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R13          RES_S            4900  4700   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R14          RES_S            4900  5500   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R17          RES_S            4900  3700   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R18          RES_S            4900  3600   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R19          RES_S            4900  3500   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R20          RES_S            4900  3400   90 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+50 0 90 10 69 0 0 "Default Font"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -350 90 10 69 10 3 "Default Font"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 22R
+"Cost State" \
+"Description" 1005 5% 1/16W 22R
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+TP3          TP_S03           8700  5900    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 350 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 250 0 12 69 10 1 "Regular MS UI Gothic"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Value" RST
+"Option" 0
+"PCB DECAL" TP-S05
+0 60 10 0 1
+
+TP4          TP_S03           8850  5900    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 350 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 250 0 12 69 10 1 "Default Font"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Value" GND
+"Option" 0
+"PCB DECAL" TP-S05
+0 60 10 0 1
+
+H1           HOLE-2.0_P3.6    850   1550   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 -250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 -350 0 6 69 10 0 "Default Font"
+*
+0 -450 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_2.0_P3.6
+0 140 20 0 1
+
+H2           HOLE-2.0_P3.6    1000  1550   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 -250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 -350 0 6 69 10 0 "Default Font"
+*
+0 -450 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_2.0_P3.6
+0 140 20 0 1
+
+C9           CAP1005A         10150 9550    0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 100nF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 Y5R 10V 100nF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+LD1          LDR3624          11500 10250   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+100 -190 0 0 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -400 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+100 -290 0 0 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" LDR3624
+"Cost" 50
+"Value" GT36516
+"Cost State" \
+"Description" GT36516 LDR SMT size3624
+"Manufacturer" JCHL
+"Part Name" CHIP LDR
+"Vendor" ANY
+"Option" 0
+"PCB DECAL" R3216
+0 60 10 0 1
+1 60 10 0 1
+
+R2           RES_S            11500 9200    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 10K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 10K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+C10          CAP1005A         11650 9550    0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 100nF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 Y5R 10V 100nF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+J1           CON_4P           1050  6250    0 1 69 10 69 10 4 10 4 0 0 0
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 200 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 -500 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+250 -600 0 6 97 10 0 "Default Font"
+*
+250 -700 0 6 97 10 0 "Default Font"
+*
+"Vendor" ANY
+"Value" A-4P-female
+"PCB Footprint" 2.0mm
+"Part Name" CON POGO
+"Option" NC
+"Manufacturer" WNRE
+"Description" TYPE A -SMD Magnetic
+"Cost State" $
+"Cost" 1.5
+"PCB DECAL" CON_4_TP2.54
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+
+ANT1         ANT_1810         7100  7450    0 1 69 10 69 10 4 11 2 0 0 2
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 150 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+600 150 0 4 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+300 -150 0 6 69 10 1 "Regular MS UI Gothic"
+Value
+300 -250 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Vendor" ANY
+"Value" KH-1608-H08
+"PCB Footprint" CHIP1608
+"Part Name" CHIP ANTENNA
+"Option" 0
+"Manufacturer" KINGHELM
+"Geometry.Height" 
+"Description" Chip Antenna 1608 MH-Ant 2.45G Type H08
+"Cost State" $
+"Cost" 0.1
+"PCB DECAL" ANT_
+0 60 10 0 1
+1 60 10 0 1
+
+CON1         FPC-31-03P       1400  10400   0 1 69 10 69 10 4 10 33 0 0 10
+"Default Font"
+"Default Font"
+500 150 0 4 69 10 0 "Default Font"
+REF-DES
+400 -2640 0 6 69 10 0 "Default Font"
+PART-TYPE
+400 -400 0 6 69 10 0 "Default Font"
+*
+400 -500 0 6 69 10 0 "Default Font"
+*
+"Vendor" ANY
+"Value" HDGC 0.3K-QX-31PWB
+"PCB Footprint" SMD
+"Part Name" CONN FPC
+"Option" 0
+"Manufacturer" HDGC
+"Description" CONNECTOR FPC 0.3mmPitch 31pin
+"Cost State" $
+"Cost" 0.095
+"PCB DECAL" FH26C_31
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+4 60 10 0 1
+5 60 10 0 1
+6 60 10 0 1
+7 60 10 0 1
+8 60 10 0 1
+9 60 10 0 1
+10 60 10 0 1
+11 60 10 0 1
+12 60 10 0 1
+13 60 10 0 1
+14 60 10 0 1
+15 60 10 0 1
+16 60 10 0 1
+17 60 10 0 1
+18 60 10 0 1
+19 60 10 0 1
+20 60 10 0 1
+21 60 10 0 1
+22 60 10 0 1
+23 60 10 0 1
+24 60 10 0 1
+25 60 10 0 1
+26 60 10 0 1
+27 60 10 0 1
+28 60 10 0 1
+29 60 10 0 1
+30 60 10 0 1
+31 60 10 0 1
+32 60 10 0 1
+
+C2           CAP1608          6800  9800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+100 0 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+100 -400 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB DECAL" C1608
+"Value" 22uF
+"PCB Footprint" C1608
+"Cost" 7
+"Cost State" \
+"Description" 1608 YUV 6.3V 22uF
+"Option" 0
+"Manufacturer" SAMSUNG / WALSIN
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+H3           HOLE-2.0_P3.6    1150  1550   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 -250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 -350 0 6 69 10 0 "Default Font"
+*
+0 -450 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_2.0_P3.6
+0 140 20 0 1
+
+H4           HOLE-2.0_P3.6    1300  1550   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 -250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 -350 0 6 69 10 0 "Default Font"
+*
+0 -450 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_2.0_P3.6
+0 140 20 0 1
+
+D2           1N5819HW         1250  6250    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+0 50 0 1 69 0 0 "Default Font"
+REF-DES
+0 -100 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 0 69 10 3 "Default Font"
+Value
+"Option" 0
+"Cost State" \
+"Cost" 30
+"Value" 1N5819HW
+"Vendor" ANY
+"Description" 1.0A SURFACE-MOUNT SCHOTTKY
+"Manufacturer" DIODES
+"Part Name" CHIP DIODE
+"PCB Footprint" SOD123
+"PCB DECAL" SOD-123
+0 60 10 0 1
+1 60 10 0 1
+
+TP1          TP_S08           14350 8550    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 12 69 10 1 "Default Font"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Option" 0
+"PCB DECAL" TP-S08
+"Value" V3V3
+0 60 10 0 1
+
+TP2          TP_S08           14500 8550    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 12 69 10 1 "Default Font"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Option" 0
+"PCB DECAL" TP-S08
+"Value" GND
+0 60 10 0 1
+
+L2           IND1005          5850  7450    0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 50 0 9 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 250 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" L1005
+"Part Name" CHIP IND
+"Manufacturer" Chilisin
+"Cost State" \
+"Value" 2.0nH
+"Cost" 50
+"Description" CLH1005T-2N0-F
+"Vendor" ANY
+"Option" 0
+"PCB DECAL" L1005
+0 70 30 0 1
+1 60 30 0 1
+
+R7           RES_S            4650  3800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 4.7K
+"Cost State" \
+"Description" 1005 5% 1/16W 4.7K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R8           RES_S            4750  3800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 4.7K
+"Cost State" \
+"Description" 1005 5% 1/16W 4.7K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+C8           CAP1005A         15400 10350   0 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 1uF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 YUV 10V 1uF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+U2           LMR544XX         12300 7250    0 0 69 10 69 10 4 10 6 0 0 2
+"Default Font"
+"Default Font"
+200 150 0 12 69 10 0 "Default Font"
+REF-DES
+400 -550 0 12 69 10 0 "Default Font"
+PART-TYPE
+550 150 0 12 69 10 1 "Default Font"
+Value
+400 -750 0 12 69 10 0 "Default Font"
+*
+"Vendor" ANY
+"Value" LMR54410
+"PCB Footprint" SOT23-6
+"Part Name" IC BUCK CONV.
+"Option" 0
+"Manufacturer" TI
+"Description" 4V-36V BUCK CONV. SOT23-6
+"Cost State" $
+"Cost" 0.2
+"PCB DECAL" SOT23-6P-0.95
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+4 60 10 0 1
+5 60 10 0 1
+
+C14          CAP1005A         13500 7250   90 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-50 -200 90 10 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -200 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-50 -100 90 8 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" C1005
+"Cost" 3.25
+"Value" 100nF
+"PCB DECAL" C1005
+"Cost State" \
+"Description" 1005 Y5R 10V 100nF
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP CAP
+"Vendor" ANY
+0 60 10 0 1
+1 60 10 0 1
+
+D3           1.5SMC43A        1750  5600   90 0 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+-200 250 0 0 69 0 0 "Regular MS UI Gothic"
+REF-DES
+0 -100 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-200 150 0 0 69 10 3 "Regular MS UI Gothic"
+Value
+"Option" 0
+"Cost State" \
+"Cost" 60
+"Value" KDZVTFTR33B
+"Vendor" ANY
+"Description" Zenner Diode KDZVTFTR33B
+"Manufacturer" ROHM
+"Part Name" CHIP DIODE ZENER
+"PCB Footprint" SOD-123FL
+"PCB DECAL" SOD-123
+0 60 10 0 1
+1 60 10 0 1
+
+J2           PH2.0-2P         1150  4800    0 1 69 10 69 10 4 10 2 0 0 2
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 250 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 300 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+250 200 0 6 69 10 1 "Regular MS UI Gothic"
+Value
+250 200 0 6 69 10 0 "Regular MS UI Gothic"
+*
+"Vendor" ANY
+"Value" B2B-PH-K-K
+"PCB Footprint" 6mm
+"Part Name" CON PH2.0
+"Option" 0
+"Manufacturer" JST
+"Description" Connector 2.0pitch Hole 2pin Black
+"Cost State" $
+"Cost" 0.018
+"PCB DECAL" PH2.0-2P
+0 60 10 0 1
+1 60 10 0 1
+
+D4           1N5819HW         1450  4800    0 0 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+0 50 0 1 69 0 0 "Default Font"
+REF-DES
+0 -100 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+350 50 0 0 69 10 3 "Default Font"
+Value
+"Option" 0
+"Cost State" \
+"Cost" 30
+"Value" 1N5819HW
+"Vendor" ANY
+"Description" 1.0A SURFACE-MOUNT SCHOTTKY
+"Manufacturer" DIODES
+"Part Name" CHIP DIODE
+"PCB Footprint" SOD123
+"PCB DECAL" SOD-123
+0 60 10 0 1
+1 60 10 0 1
+
+H5           HOLE_1.2         1700  1350   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+450 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+200 -250 0 6 97 10 0 "Regular MS UI Gothic"
+PART-TYPE
+200 -350 0 6 97 10 0 "Regular MS UI Gothic"
+*
+200 -450 0 6 97 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_1.2
+0 140 20 0 1
+
+H6           HOLE_1.2         1850  1350   90 0 69 10 69 10 4 7 1 0 0 18
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+450 0 90 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+200 -250 0 6 97 10 0 "Regular MS UI Gothic"
+PART-TYPE
+200 -350 0 6 97 10 0 "Regular MS UI Gothic"
+*
+200 -450 0 6 97 10 0 "Regular MS UI Gothic"
+*
+"Cost State" \
+"Cost" 0
+"Option" 0
+"Value" PAD-0.5X1.8
+"PCB Footprint" PAD-0.5X1.8
+"Part Name" 
+"PCB DECAL" HOLE_1.2
+0 140 20 0 1
+
+ED2          ULCE0505         2200  5550   90 1 69 10 69 10 3 10 2 0 0 18
+"Default Font"
+"Default Font"
+50 50 0 9 69 10 0 "Default Font"
+REF-DES
+170 200 0 6 69 10 0 "Default Font"
+PART-TYPE
+250 50 0 8 69 10 1 "Default Font"
+Value
+"Cost" 8
+"Cost State" \
+"Description" ULCE0505C015FR 1005, 8KV, 0.15pF
+"Manufacturer" INNO CHIPS
+"Option" 0
+"Part Name" ESD SUPPRESSOR
+"PCB Footprint" V1005
+"Value" 015FR
+"Vendor" ANY
+"PCB DECAL" V-1005
+0 60 10 0 1
+1 60 10 0 1
+
+ED1          ULCE0505         2000  5550   90 1 69 10 69 10 3 10 2 0 0 18
+"Default Font"
+"Default Font"
+50 50 0 9 69 10 0 "Default Font"
+REF-DES
+170 200 0 6 69 10 0 "Default Font"
+PART-TYPE
+250 50 0 8 69 10 1 "Default Font"
+Value
+"Cost" 8
+"Cost State" \
+"Description" ULCE0505C015FR 1005, 8KV, 0.15pF
+"Manufacturer" INNO CHIPS
+"Option" 0
+"Part Name" ESD SUPPRESSOR
+"PCB Footprint" V1005
+"Value" 015FR
+"Vendor" ANY
+"PCB DECAL" V-1005
+0 60 10 0 1
+1 60 10 0 1
+
+R21          RES_S            4500  3800    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 10K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 10K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+J3           CON_4P           1050  3550    0 1 69 10 69 10 4 10 4 0 0 0
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+250 200 0 4 69 10 0 "Regular MS UI Gothic"
+REF-DES
+250 -500 0 6 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+250 -600 0 6 97 10 0 "Default Font"
+*
+250 -700 0 6 97 10 0 "Default Font"
+*
+"Vendor" ANY
+"Value" A-4P-female
+"PCB Footprint" 2.0mm
+"Part Name" CON POGO
+"Option" NC
+"Manufacturer" WNRE
+"Description" TYPE A -SMD Magnetic
+"Cost State" $
+"Cost" 1.5
+"PCB DECAL" CON_4_TP2.54
+0 60 10 0 1
+1 60 10 0 1
+2 60 10 0 1
+3 60 10 0 1
+
+ED3          ULCE0505         2200  2850   90 1 69 10 69 10 3 10 2 0 0 18
+"Default Font"
+"Default Font"
+50 50 0 9 69 10 0 "Default Font"
+REF-DES
+170 200 0 6 69 10 0 "Default Font"
+PART-TYPE
+250 50 0 8 69 10 1 "Default Font"
+Value
+"Cost" 8
+"Cost State" \
+"Description" ULCE0505C015FR 1005, 8KV, 0.15pF
+"Manufacturer" INNO CHIPS
+"Option" 0
+"Part Name" ESD SUPPRESSOR
+"PCB Footprint" V1005
+"Value" 015FR
+"Vendor" ANY
+"PCB DECAL" V-1005
+0 60 10 0 1
+1 60 10 0 1
+
+ED4          ULCE0505         2000  2850   90 1 69 10 69 10 3 10 2 0 0 18
+"Default Font"
+"Default Font"
+50 50 0 9 69 10 0 "Default Font"
+REF-DES
+170 200 0 6 69 10 0 "Default Font"
+PART-TYPE
+250 50 0 8 69 10 1 "Default Font"
+Value
+"Cost" 8
+"Cost State" \
+"Description" ULCE0505C015FR 1005, 8KV, 0.15pF
+"Manufacturer" INNO CHIPS
+"Option" 0
+"Part Name" ESD SUPPRESSOR
+"PCB Footprint" V1005
+"Value" 015FR
+"Vendor" ANY
+"PCB DECAL" V-1005
+0 60 10 0 1
+1 60 10 0 1
+
+R6           RES_S            2200  3650    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 10K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 10K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+R22          RES_S            2000  3650    0 3 69 10 69 10 3 10 2 0 0 26
+"Regular MS UI Gothic"
+"Regular MS UI Gothic"
+50 -100 90 8 69 0 0 "Regular MS UI Gothic"
+REF-DES
+-100 -290 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+50 -300 90 10 69 10 3 "Regular MS UI Gothic"
+Value
+"PCB Footprint" R1005
+"Cost" 0.6
+"Value" 10K/F
+"Cost State" \
+"Description" 1005 1% 1/16W 10K
+"Manufacturer" SAMSUNG / WALSIN
+"Option" 0
+"Part Name" CHIP RES
+"Vendor" ANY
+"PCB DECAL" R1005
+0 60 10 0 1
+1 60 10 0 1
+
+D1           1N5819HW         1650  3550    0 3 69 10 69 10 3 10 2 0 0 26
+"Default Font"
+"Default Font"
+400 -50 0 1 69 0 0 "Default Font"
+REF-DES
+0 -100 0 0 69 0 0 "Regular MS UI Gothic"
+PART-TYPE
+-250 -50 0 0 69 10 3 "Default Font"
+Value
+"Option" 0
+"Cost State" \
+"Cost" 30
+"Value" 1N5819HW
+"Vendor" ANY
+"Description" 1.0A SURFACE-MOUNT SCHOTTKY
+"Manufacturer" DIODES
+"Part Name" CHIP DIODE
+"PCB Footprint" SOD123
+"PCB DECAL" SOD-123
+0 60 10 0 1
+1 60 10 0 1
+
+TP5          TP_S03           8850  4600    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 350 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 250 0 12 69 10 1 "Regular MS UI Gothic"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Value" IO21
+"Option" 0
+"PCB DECAL" TP-S05
+0 60 10 0 1
+
+TP6          TP_S03           9000  4600    0 0 69 10 69 10 4 3 1 0 0 26
+"Default Font"
+"Regular MS UI Gothic"
+0 350 0 12 69 10 0 "Regular MS UI Gothic"
+REF-DES
+0 250 0 12 69 10 0 "Regular MS UI Gothic"
+PART-TYPE
+0 250 0 12 69 10 1 "Regular MS UI Gothic"
+Value
+-50 -100 90 12 69 10 0 "Regular MS UI Gothic"
+*
+"Value" IO18
+"Option" 0
+"PCB DECAL" TP-S05
+0 60 10 0 1
+
+
+*BUSSES*
+
+
+*OFFPAGE REFS*
+
+
+
+@@@O0    SPICS0 $OSR_SYMS 7800   4900   0 1 5
+@@@O1    SPICLK $OSR_SYMS 7800   5000   0 1 5
+@@@O2    SPID $OSR_SYMS 7800   5200   0 1 0
+@@@O3    SPIO $OSR_SYMS 7800   5100   0 1 0
+@@@O4    SPIWP $OSR_SYMS 7800   4800   0 0 1
+@@@O5    SPIHD $OSR_SYMS 7800   4700   0 0 1
+@@@O6    GND $GND_SYMS 8700   2200   0 1 0
+@@@O7    GND $GND_SYMS 7900   2200   0 1 0
+@@@O8    GND $GND_SYMS 8300   2200   0 0 0
+@@@O9    P3V3 $OSR_SYMS 5300   6200   0 0 2
+@@@O10   VDD3V3 $PWR_SYMS 7750   6450   0 0 0
+@@@O11   QSPI_D1 $OSR_SYMS 4650   5050   0 0 0
+@@@O12   QSPI_SCL $OSR_SYMS 4650   5250   0 0 0
+@@@O13   QSPI_D3 $OSR_SYMS 4650   4850   0 0 0
+@@@O14   QSPI_D2 $OSR_SYMS 4650   4950   0 0 0
+@@@O15   QSPI_D0 $OSR_SYMS 4650   5150   0 0 5
+@@@O16   LCD_RESET $OSR_SYMS 4650   5500   0 0 5
+@@@O17   I2C_SCL $OSR_SYMS 4300   3400   0 0 5
+@@@O18   TP_INT $OSR_SYMS 4300   3700   0 0 2
+@@@O19   TP_RST $OSR_SYMS 4300   3600   0 0 5
+@@@O20   LCD_CS $OSR_SYMS 4650   5400   0 0 5
+@@@O21   GND $GND_SYMS 6500   2150   0 0 0
+@@@O22   DN $OSR_SYMS 4650   5800   0 0 0
+@@@O23   DP $OSR_SYMS 4650   5700   0 0 0
+@@@O24   CHIP_PU $OSR_SYMS 7800   5900   0 0 3
+@@@O25   GND $GND_SYMS 4800   6950   0 0 0
+@@@O26   GND $GND_SYMS 5600   6950   0 0 0
+@@@O27   GND $GND_SYMS 13350  2600   0 0 0
+@@@O28   GND $GND_SYMS 13100  2600   0 0 0
+@@@O29   SPICS0 $OSR_SYMS 14700  2800   0 1 2
+@@@O30   SPICLK $OSR_SYMS 14700  2900   0 1 2
+@@@O31   SPID $OSR_SYMS 14700  3000   0 1 0
+@@@O32   SPIO $OSR_SYMS 14700  3100   0 1 0
+@@@O33   SPIWP $OSR_SYMS 14700  3200   0 0 1
+@@@O34   SPIHD $OSR_SYMS 14700  3300   0 0 1
+@@@O35   GND $GND_SYMS 1550   7400   90 0 0
+@@@O36   GND $GND_SYMS 1550   7700   90 0 0
+@@@O37   GND $GND_SYMS 1550   8000   90 0 0
+@@@O38   GND $GND_SYMS 1550   8300   90 0 0
+@@@O39   GND $GND_SYMS 1550   9300   90 0 0
+@@@O40   GND $GND_SYMS 1550   10400  90 0 0
+@@@O41   GND $GND_SYMS 1550   9800   90 0 0
+@@@O42   QSPI_D0 $OSR_SYMS 1850   8900   0 0 1
+@@@O43   QSPI_D1 $OSR_SYMS 1850   8800   0 0 1
+@@@O44   QSPI_D2 $OSR_SYMS 1850   8500   0 0 1
+@@@O45   QSPI_D3 $OSR_SYMS 1850   8600   0 0 1
+@@@O46   QSPI_SCL $OSR_SYMS 1850   8700   0 0 3
+@@@O47   LCD_RESET $OSR_SYMS 1850   9100   0 0 3
+@@@O48   LCD_TE $OSR_SYMS 1850   8400   0 0 3
+@@@O49   LCD_CS $OSR_SYMS 1850   9000   0 0 3
+@@@O50   VDD3V3 $PWR_SYMS 1800   9600   90 1 0
+@@@O51   I2C_SCL $OSR_SYMS 2150   10000  0 0 3
+@@@O52   I2C_SDA $OSR_SYMS 2150   10100  0 0 1
+@@@O53   TP_INT $OSR_SYMS 2150   10300  0 0 4
+@@@O54   TP_RST $OSR_SYMS 2150   10200  0 0 3
+@@@O55   VDD3V3 $PWR_SYMS 1800   9900   90 1 0
+@@@O56   GND $GND_SYMS 1050   7050   0 0 0
+@@@O57   GND $GND_SYMS 1050   10700  0 2 0
+@@@O58   VDD3V3 $PWR_SYMS 14600  10650  0 0 0
+@@@O59   GND $GND_SYMS 14350  9950   0 0 0
+@@@O60   GND $GND_SYMS 14900  9950   0 0 0
+@@@O61   GND $GND_SYMS 14600  9950   0 0 0
+@@@O62   GND $GND_SYMS 15150  9950   0 0 0
+@@@O63   GND $GND_SYMS 14050  9950   0 0 0
+@@@O64   GND $GND_SYMS 5850   9700   0 1 0
+@@@O65   VDD3V3 $PWR_SYMS 5850   10500  0 0 0
+@@@O66   GND $GND_SYMS 6800   9700   0 0 0
+@@@O67   P3V3 $OSR_SYMS 7050   10300  0 0 4
+@@@O68   VDD3V3 $PWR_SYMS 10150  10450  0 0 0
+@@@O69   GND $GND_SYMS 10150  9100   0 0 0
+@@@O70   CHIP_PU $OSR_SYMS 10250  9700   0 0 4
+@@@O71   VDD_MAIN $PWR_SYMS 12200  7550   0 0 0
+@@@O72   VDD3V3 $PWR_SYMS 14850  7450   0 0 0
+@@@O73   GND $GND_SYMS 14850  6250   0 1 0
+@@@O74   GND $GND_SYMS 14300  6250   0 0 0
+@@@O75   GND $GND_SYMS 12200  6500   0 0 0
+@@@O76   GND $GND_SYMS 11550  7250   90 1 0
+@@@O77   GND $GND_SYMS 2500   1000   0 0 0
+@@@O78   VDD_MAIN $PWR_SYMS 2500   1650   0 0 0
+@@@O79   VDD_SPI $OSR_SYMS 12900  3300   0 0 2
+@@@O80   VDD_SPI $OSR_SYMS 7800   4600   0 0 4
+@@@O81   LCD_TE $OSR_SYMS 4650   4700   0 0 0
+@@@O82   I2C_SDA $OSR_SYMS 4300   3500   0 0 5
+@@@O83   GND $GND_SYMS 8850   5650   0 0 0
+@@@O84   GND $GND_SYMS 11500  9100   0 0 0
+@@@O85   VDD3V3 $PWR_SYMS 11500  10450  0 0 0
+@@@O86   LD_IN $OSR_SYMS 5250   2700   0 0 2
+@@@O87   LD_IN $OSR_SYMS 11850  9700   0 0 4
+@@@O88   GND $GND_SYMS 1400   5950   90 0 0
+@@@O89   DP $OSR_SYMS 2450   6050   0 0 1
+@@@O90   DN $OSR_SYMS 2450   6150   0 0 1
+@@@O91   VDD_MAIN $PWR_SYMS 2550   6250   90 1 0
+@@@O92   VDD3V3 $PWR_SYMS 14100  8400   0 0 0
+@@@O93   GND $GND_SYMS 14500  8350   0 0 0
+@@@O94   VDD3V3 $PWR_SYMS 4400   4300   90 0 0
+@@@O95   GND $GND_SYMS 15400  9950   0 0 0
+@@@O96   GND $GND_SYMS 1750   5450   0 0 0
+@@@O97   GND $GND_SYMS 1350   4600   90 0 0
+@@@O98   VDD_MAIN $PWR_SYMS 2150   4800   90 1 0
+@@@O99   GND $GND_SYMS 2000   5450   0 0 0
+@@@O100  GND $GND_SYMS 2200   5450   0 0 0
+@@@O101  UART0_RXD $OSR_SYMS 7800   5500   0 0 3
+@@@O102  UART0_TXD $OSR_SYMS 7800   5400   0 0 4
+@@@O103  GND $GND_SYMS 1400   3250   90 0 0
+@@@O104  UART0_TXD $OSR_SYMS 2450   3350   0 0 3
+@@@O105  UART0_RXD $OSR_SYMS 2450   3450   0 0 4
+@@@O106  VDD3V3 $PWR_SYMS 2550   3550   90 1 0
+@@@O107  GND $GND_SYMS 2000   2750   0 0 0
+@@@O108  GND $GND_SYMS 2200   2750   0 0 0
+@@@O109  VDD3V3 $PWR_SYMS 2100   4250   0 0 0
+
+*TIEDOTS*
+
+
+
+@@@D0    7900   2700  
+@@@D1    8300   2250  
+@@@D2    8700   2700  
+@@@D3    7750   6300  
+@@@D4    5400   6200  
+@@@D5    7750   6200  
+@@@D6    4800   7450  
+@@@D7    5600   7450  
+@@@D8    1600   9500  
+@@@D9    1600   9600  
+@@@D10   1600   9600  
+@@@D11   14600  10500 
+@@@D12   14900  10500 
+@@@D13   14600  10500 
+@@@D14   14350  10500 
+@@@D15   5850   10300 
+@@@D16   6800   10300 
+@@@D17   10150  9700  
+@@@D18   14300  6750  
+@@@D19   14300  7250  
+@@@D20   14850  7250  
+@@@D21   14300  6750  
+@@@D22   14550  7250  
+@@@D23   12200  7250  
+@@@D24   12200  7250  
+@@@D25   13100  3300  
+@@@D26   11500  9700  
+@@@D27   11500  9150  
+@@@D28   11650  9700  
+@@@D29   4650   4300  
+@@@D30   15150  10500 
+@@@D31   13600  7250  
+@@@D32   1750   6250  
+@@@D33   7750   6100  
+@@@D34   2000   6150  
+@@@D35   2200   6050  
+@@@D36   4500   4300  
+@@@D37   4750   3400  
+@@@D38   4650   3500  
+@@@D39   4500   3600  
+@@@D40   2000   3450  
+@@@D41   2200   3350  
+@@@D42   2000   3450  
+@@@D43   2200   3350  
+@@@D44   2100   4150  
+
+*CONNECTION*
+
+
+*SIGNAL* $$$11063 64 0
+R4.1         @@@D18       2 0
+14300  6750  
+14300  6750  
+@@@D18       R5.2         2 0
+14300  6750  
+14300  6640  
+@@@D18       @@@D21       2 0
+14300  6750  
+14300  6750  
+@@@D21       C15.2        3 0
+14300  6750  
+14550  6750  
+14550  6850  
+@@@D21       U2.3         4 0
+14300  6750  
+13200  6750  
+13200  6850  
+13100  6850  
+
+*SIGNAL* $$$11532 64 0
+C20.1        @@@D2        2 0
+8700   2600  
+8700   2700  
+L4.2         @@@D2        3 0
+8350   3000  
+8700   3000  
+8700   2700  
+@@@D2        X2.1         2 0
+8700   2700  
+8500   2700  
+
+*SIGNAL* $$$11064 64 0
+L3.1         @@@D31       2 0
+13750  7250  
+13600  7250  
+U2.6         @@@D31       3 0
+13100  7050  
+13600  7050  
+13600  7250  
+@@@D31       C14.1        2 0
+13600  7250  
+13500  7250  
+
+*SIGNAL* $$$25459 64 0
+R17.2        U1.9         2 0
+5290   3700  
+5600   3700  
+
+*SIGNAL* $$$23105 64 0
+R15.2        U1.14        2 0
+5290   5400  
+5600   5400  
+
+*SIGNAL* SPID 0 0
+@@@O2        U1.35        2 0
+7800   5200  
+7500   5200  
+@@@O31       U4.5         2 0
+14700  3000  
+14500  3000  
+
+*SIGNAL* SPICLK 0 0
+@@@O1        U1.33        2 0
+7800   5000  
+7500   5000  
+@@@O30       U4.6         2 0
+14700  2900  
+14500  2900  
+
+*SIGNAL* GND 0 4
+"OM0" 
+"GND" 
+"value" GND
+"11" gnd
+C20.2        @@@O6        2 0
+8700   2300  
+8700   2200  
+C19.2        @@@O7        2 0
+7900   2300  
+7900   2200  
+X2.2         @@@D1        2 0
+8300   2500  
+8300   2250  
+X2.4         @@@D1        4 0
+8300   2900  
+8500   2900  
+8500   2250  
+8300   2250  
+@@@D1        @@@O8        2 0
+8300   2250  
+8300   2200  
+U1.57        @@@O21       2 0
+6500   2500  
+6500   2150  
+C11.2        @@@O25       2 0
+4800   7050  
+4800   6950  
+C12.2        @@@O26       2 0
+5600   7050  
+5600   6950  
+U4.4         @@@O27       3 0
+13500  2800  
+13350  2800  
+13350  2600  
+C22.2        @@@O28       2 0
+13100  2850  
+13100  2600  
+CON1.31      @@@O35       2 0
+1400   7400  
+1550   7400  
+CON1.28      @@@O36       2 0
+1400   7700  
+1550   7700  
+CON1.25      @@@O37       2 0
+1400   8000  
+1550   8000  
+CON1.22      @@@O38       2 0
+1400   8300  
+1550   8300  
+CON1.12      @@@O39       2 0
+1400   9300  
+1550   9300  
+CON1.1       @@@O40       2 0
+1400   10400 
+1550   10400 
+CON1.7       @@@O41       2 0
+1400   9800  
+1550   9800  
+CON1.33      @@@O56       2 0
+1050   7200  
+1050   7050  
+CON1.32      @@@O57       2 0
+1050   10600 
+1050   10700 
+C4.2         @@@O59       2 0
+14350  10050 
+14350  9950  
+C6.2         @@@O60       2 0
+14900  10050 
+14900  9950  
+C5.2         @@@O61       2 0
+14600  10050 
+14600  9950  
+C7.2         @@@O62       2 0
+15150  10050 
+15150  9950  
+C3.2         @@@O63       2 0
+14050  10050 
+14050  9950  
+C1.1         @@@O64       2 0
+5850   9800  
+5850   9700  
+C2.1         @@@O66       2 0
+6800   9800  
+6800   9700  
+@@@O69       C9.2         2 0
+10150  9100  
+10150  9250  
+C16.2        @@@O73       2 0
+14850  6550  
+14850  6250  
+R5.1         @@@O74       2 0
+14300  6250  
+14300  6250  
+@@@O75       U2.2         3 0
+12200  6500  
+12200  6850  
+12300  6850  
+C13.2        @@@O76       2 0
+11600  7250  
+11550  7250  
+C23.2        @@@O77       2 0
+2500   1150  
+2500   1000  
+TP4.1        @@@O83       2 0
+8850   5900  
+8850   5650  
+R2.1         @@@D27       2 0
+11500  9200  
+11500  9150  
+C10.2        @@@D27       3 0
+11650  9250  
+11650  9150  
+11500  9150  
+@@@D27       @@@O84       2 0
+11500  9150  
+11500  9100  
+J1.4         @@@O88       2 0
+1050   5950  
+1400   5950  
+TP2.1        @@@O93       2 0
+14500  8550  
+14500  8350  
+C8.2         @@@O95       2 0
+15400  10050 
+15400  9950  
+D3.1         @@@O96       2 0
+1750   5600  
+1750   5450  
+J2.2         @@@O97       2 0
+1150   4600  
+1350   4600  
+ED1.1        @@@O99       2 0
+2000   5550  
+2000   5450  
+ED2.1        @@@O100      2 0
+2200   5550  
+2200   5450  
+J3.4         @@@O103      2 0
+1050   3250  
+1400   3250  
+ED4.1        @@@O107      2 0
+2000   2850  
+2000   2750  
+ED3.1        @@@O108      2 0
+2200   2850  
+2200   2750  
+
+*SIGNAL* $$$31844 64 0
+C14.2        U2.1         2 0
+13200  7250  
+13100  7250  
+
+*SIGNAL* $$$23165 64 0
+R16.2        U1.15        2 0
+5290   5250  
+5600   5250  
+
+*SIGNAL* VDD_SPI 0 0
+U4.8         @@@D25       2 0
+13500  3300  
+13100  3300  
+@@@D25       C22.1        2 0
+13100  3300  
+13100  3150  
+@@@D25       @@@O79       2 0
+13100  3300  
+12900  3300  
+U1.29        @@@O80       2 0
+7500   4600  
+7800   4600  
+
+*SIGNAL* QSPI_D0 0 0
+@@@O15       R9.1         2 0
+4650   5150  
+4900   5150  
+@@@O42       CON1.16      2 0
+1850   8900  
+1400   8900  
+
+*SIGNAL* XTAL_N 0 0
+X2.3         @@@D0        2 0
+8100   2700  
+7900   2700  
+@@@D0        C19.1        2 0
+7900   2700  
+7900   2600  
+U1.53        @@@D0        2 0
+7500   2700  
+7900   2700  
+
+*SIGNAL* QSPI_D1 0 0
+@@@O11       R10.1        2 0
+4650   5050  
+4900   5050  
+@@@O43       CON1.17      2 0
+1850   8800  
+1400   8800  
+
+*SIGNAL* QSPI_D3 0 0
+@@@O13       R12.1        2 0
+4650   4850  
+4900   4850  
+@@@O45       CON1.19      2 0
+1850   8600  
+1400   8600  
+
+*SIGNAL* VDD_MAIN 0 0
+@@@O71       @@@D23       2 0
+12200  7550  
+12200  7250  
+C13.1        @@@D23       2 0
+11900  7250  
+12200  7250  
+@@@D23       @@@D24       2 0
+12200  7250  
+12200  7250  
+@@@D24       U2.5         2 0
+12200  7250  
+12300  7250  
+@@@D24       U2.4         3 0
+12200  7250  
+12200  7050  
+12300  7050  
+C23.1        @@@O78       2 0
+2500   1450  
+2500   1650  
+D2.2         @@@D32       2 0
+1550   6250  
+1750   6250  
+D3.2         @@@D32       2 0
+1750   5900  
+1750   6250  
+@@@D32       @@@O91       2 0
+1750   6250  
+2550   6250  
+D4.2         @@@O98       2 0
+1750   4800  
+2150   4800  
+
+*SIGNAL* $$$23167 64 0
+R9.2         U1.16        2 0
+5290   5150  
+5600   5150  
+
+*SIGNAL* XTAL_P 0 0
+L4.1         U1.54        2 0
+7950   3000  
+7500   3000  
+
+*SIGNAL* SPIO 0 0
+@@@O3        U1.34        2 0
+7800   5100  
+7500   5100  
+@@@O32       U4.2         2 0
+14700  3100  
+14500  3100  
+
+*SIGNAL* $$$23169 64 0
+R10.2        U1.17        2 0
+5290   5050  
+5600   5050  
+
+*SIGNAL* QSPI_D2 0 0
+@@@O14       R11.1        2 0
+4650   4950  
+4900   4950  
+@@@O44       CON1.20      2 0
+1850   8500  
+1400   8500  
+
+*SIGNAL* QSPI_SCL 0 0
+@@@O12       R16.1        2 0
+4650   5250  
+4900   5250  
+@@@O46       CON1.18      2 0
+1850   8700  
+1400   8700  
+
+*SIGNAL* LCD_RESET 0 0
+@@@O16       R14.1        2 0
+4650   5500  
+4900   5500  
+@@@O47       CON1.14      2 0
+1850   9100  
+1400   9100  
+
+*SIGNAL* $$$23171 64 0
+R11.2        U1.18        2 0
+5290   4950  
+5600   4950  
+
+*SIGNAL* P3V3 0 0
+@@@O9        @@@D4        2 0
+5300   6200  
+5400   6200  
+U1.2         @@@D4        3 0
+5600   6300  
+5400   6300  
+5400   6200  
+@@@D4        U1.3         2 0
+5400   6200  
+5600   6200  
+L1.2         @@@D16       2 0
+6500   10300 
+6800   10300 
+@@@D16       C2.2         2 0
+6800   10300 
+6800   10100 
+@@@D16       @@@O67       2 0
+6800   10300 
+7050   10300 
+
+*SIGNAL* $$$23173 64 0
+R12.2        U1.19        2 0
+5290   4850  
+5600   4850  
+
+*SIGNAL* $$$24056 64 0
+R13.2        U1.23        2 0
+5290   4700  
+5600   4700  
+
+*SIGNAL* LCD_TE 0 0
+@@@O48       CON1.21      2 0
+1850   8400  
+1400   8400  
+@@@O81       R13.1        2 0
+4650   4700  
+4900   4700  
+
+*SIGNAL* $$$24107 64 0
+R14.2        U1.13        2 0
+5290   5500  
+5600   5500  
+
+*SIGNAL* TP_RST 0 0
+@@@O19       @@@D39       2 0
+4300   3600  
+4500   3600  
+@@@O54       CON1.3       2 0
+2150   10200 
+1400   10200 
+R21.1        @@@D39       2 0
+4500   3800  
+4500   3600  
+@@@D39       R18.1        2 0
+4500   3600  
+4900   3600  
+
+*SIGNAL* $$$25461 64 0
+U1.10        R18.2        2 0
+5600   3600  
+5290   3600  
+
+*SIGNAL* VDD3V3 0 0
+U1.55        @@@D5        2 0
+7500   6200  
+7750   6200  
+@@@D3        U1.56        2 0
+7750   6300  
+7500   6300  
+@@@D3        @@@O10       2 0
+7750   6300  
+7750   6450  
+U1.46        @@@D33       2 0
+7500   6100  
+7750   6100  
+@@@D5        @@@D3        2 0
+7750   6200  
+7750   6300  
+CON1.8       @@@D9        3 0
+1400   9700  
+1600   9700  
+1600   9600  
+CON1.10      @@@D8        2 0
+1400   9500  
+1600   9500  
+@@@D8        CON1.11      3 0
+1600   9500  
+1600   9400  
+1400   9400  
+CON1.9       @@@D10       2 0
+1400   9600  
+1600   9600  
+@@@D9        @@@D8        2 0
+1600   9600  
+1600   9500  
+@@@D10       @@@D9        2 0
+1600   9600  
+1600   9600  
+@@@D10       @@@O50       2 0
+1600   9600  
+1800   9600  
+CON1.6       @@@O55       2 0
+1400   9900  
+1800   9900  
+@@@O58       @@@D13       2 0
+14600  10650 
+14600  10500 
+C4.1         @@@D14       2 0
+14350  10350 
+14350  10500 
+C5.1         @@@D11       2 0
+14600  10350 
+14600  10500 
+@@@D11       @@@D13       2 0
+14600  10500 
+14600  10500 
+@@@D12       C6.1         2 0
+14900  10500 
+14900  10350 
+@@@D13       @@@D12       2 0
+14600  10500 
+14900  10500 
+@@@D12       @@@D30       2 0
+14900  10500 
+15150  10500 
+C3.1         @@@D14       3 0
+14050  10350 
+14050  10500 
+14350  10500 
+@@@D14       @@@D11       2 0
+14350  10500 
+14600  10500 
+C1.2         @@@D15       2 0
+5850   10100 
+5850   10300 
+@@@D15       @@@O65       2 0
+5850   10300 
+5850   10500 
+L1.1         @@@D15       2 0
+6100   10300 
+5850   10300 
+R1.2         @@@O68       2 0
+10150  10190 
+10150  10450 
+C16.1        @@@D20       2 0
+14850  6850  
+14850  7250  
+@@@D19       R4.2         2 0
+14300  7250  
+14300  7140  
+@@@D19       L3.2         2 0
+14300  7250  
+14150  7250  
+@@@O72       @@@D20       2 0
+14850  7450  
+14850  7250  
+@@@D19       @@@D22       2 0
+14300  7250  
+14550  7250  
+@@@D22       @@@D20       2 0
+14550  7250  
+14850  7250  
+C15.1        @@@D22       2 0
+14550  7150  
+14550  7250  
+LD1.1        @@@O85       2 0
+11500  10250 
+11500  10450 
+U1.20        @@@D33       3 0
+7500   6000  
+7750   6000  
+7750   6100  
+TP1.1        @@@O92       4 0
+14350  8550  
+14350  8250  
+14100  8250  
+14100  8400  
+R7.2         @@@D29       2 0
+4650   4190  
+4650   4300  
+@@@D29       R8.2         3 0
+4650   4300  
+4750   4300  
+4750   4190  
+@@@D29       @@@D36       2 0
+4650   4300  
+4500   4300  
+C8.1         @@@D30       3 0
+15400  10350 
+15400  10500 
+15150  10500 
+@@@D30       C7.1         2 0
+15150  10500 
+15150  10350 
+@@@D33       @@@D5        2 0
+7750   6100  
+7750   6200  
+R21.2        @@@D36       2 0
+4500   4190  
+4500   4300  
+@@@D36       @@@O94       2 0
+4500   4300  
+4400   4300  
+@@@O106      D1.1         2 0
+2550   3550  
+1650   3550  
+R22.2        @@@D44       3 0
+2000   4040  
+2000   4150  
+2100   4150  
+@@@D44       R6.2         3 0
+2100   4150  
+2200   4150  
+2200   4040  
+@@@D44       @@@O109      2 0
+2100   4150  
+2100   4250  
+
+*SIGNAL* I2C_SCL 0 0
+R20.1        @@@D37       2 0
+4900   3400  
+4750   3400  
+@@@O51       CON1.5       2 0
+2150   10000 
+1400   10000 
+R8.1         @@@D37       2 0
+4750   3800  
+4750   3400  
+@@@D37       @@@O17       2 0
+4750   3400  
+4300   3400  
+
+*SIGNAL* $$$24769 64 0
+L2.2         ANT1.2       2 0
+6250   7450  
+6500   7450  
+
+*SIGNAL* $$$20820 64 0
+J2.1         D4.1         2 0
+1150   4800  
+1450   4800  
+
+*SIGNAL* I2C_SDA 0 0
+@@@O52       CON1.4       2 0
+2150   10100 
+1400   10100 
+R19.1        @@@D38       2 0
+4900   3500  
+4650   3500  
+R7.1         @@@D38       2 0
+4650   3800  
+4650   3500  
+@@@D38       @@@O82       2 0
+4650   3500  
+4300   3500  
+
+*SIGNAL* $$$6432 64 0
+R20.2        U1.12        2 0
+5290   3400  
+5600   3400  
+
+*SIGNAL* LD_IN 0 0
+R2.2         @@@D26       2 0
+11500  9590  
+11500  9700  
+@@@D26       LD1.2        2 0
+11500  9700  
+11500  9750  
+@@@D26       @@@D28       2 0
+11500  9700  
+11650  9700  
+@@@O86       U1.43        2 0
+5250   2700  
+5600   2700  
+@@@D28       C10.1        2 0
+11650  9700  
+11650  9550  
+@@@D28       @@@O87       2 0
+11650  9700  
+11850  9700  
+
+*SIGNAL* $$$6446 64 0
+R19.2        U1.11        2 0
+5290   3500  
+5600   3500  
+
+*SIGNAL* $$$20440 64 0
+D1.2         J3.1         2 0
+1350   3550  
+1050   3550  
+
+*SIGNAL* TP_INT 0 0
+@@@O18       R17.1        2 0
+4300   3700  
+4900   3700  
+@@@O53       CON1.2       2 0
+2150   10300 
+1400   10300 
+
+*SIGNAL* $$$17244 64 0
+U1.27        TP5.1        3 0
+7500   4400  
+8850   4400  
+8850   4600  
+
+*SIGNAL* $$$18046 64 0
+TP6.1        U1.24        3 0
+9000   4600  
+9000   4200  
+7500   4200  
+
+*SIGNAL* SPIHD 0 0
+@@@O5        U1.30        2 0
+7800   4700  
+7500   4700  
+@@@O34       U4.7         2 0
+14700  3300  
+14500  3300  
+
+*SIGNAL* LCD_CS 0 0
+@@@O20       R15.1        2 0
+4650   5400  
+4900   5400  
+@@@O49       CON1.15      2 0
+1850   9000  
+1400   9000  
+
+*SIGNAL* DP 0 0
+U1.26        @@@O23       2 0
+5600   5700  
+4650   5700  
+@@@O89       @@@D35       2 0
+2450   6050  
+2200   6050  
+ED2.2        @@@D35       2 0
+2200   5840  
+2200   6050  
+@@@D35       J1.3         2 0
+2200   6050  
+1050   6050  
+
+*SIGNAL* DN 0 0
+U1.25        @@@O22       2 0
+5600   5800  
+4650   5800  
+J1.2         @@@D34       2 0
+1050   6150  
+2000   6150  
+ED1.2        @@@D34       2 0
+2000   5840  
+2000   6150  
+@@@D34       @@@O90       2 0
+2000   6150  
+2450   6150  
+
+*SIGNAL* $$$27901 64 0
+J1.1         D2.1         2 0
+1050   6250  
+1250   6250  
+
+*SIGNAL* UART0_RXD 0 0
+U1.50        @@@O101      2 0
+7500   5500  
+7800   5500  
+J3.2         @@@D40       2 0
+1050   3450  
+2000   3450  
+ED4.2        @@@D40       2 0
+2000   3140  
+2000   3450  
+@@@D40       @@@D42       2 0
+2000   3450  
+2000   3450  
+@@@D42       @@@O105      2 0
+2000   3450  
+2450   3450  
+@@@D42       R22.1        2 0
+2000   3450  
+2000   3650  
+
+*SIGNAL* UART0_TXD 0 0
+U1.49        @@@O102      2 0
+7500   5400  
+7800   5400  
+@@@O104      @@@D41       2 0
+2450   3350  
+2200   3350  
+ED3.2        @@@D41       2 0
+2200   3140  
+2200   3350  
+@@@D41       @@@D43       2 0
+2200   3350  
+2200   3350  
+@@@D43       J3.3         2 0
+2200   3350  
+1050   3350  
+@@@D43       R6.1         2 0
+2200   3350  
+2200   3650  
+
+*SIGNAL* CHIP_PU 0 0
+U1.4         @@@O24       2 0
+7500   5900  
+7800   5900  
+@@@D17       C9.1         2 0
+10150  9700  
+10150  9550  
+@@@D17       R1.1         2 0
+10150  9700  
+10150  9800  
+@@@D17       @@@O70       2 0
+10150  9700  
+10250  9700  
+
+*SIGNAL* $$$2521 64 0
+U1.5         TP3.1        3 0
+7500   5700  
+8700   5700  
+8700   5900  
+
+*SIGNAL* $$$20305 64 0
+@@@D6        U1.1         4 0
+4800   7450  
+4400   7450  
+4400   6000  
+5600   6000  
+C11.1        @@@D6        2 0
+4800   7350  
+4800   7450  
+@@@D6        R3.1         2 0
+4800   7450  
+5000   7450  
+
+*SIGNAL* $$$29479 64 0
+R3.2         @@@D7        2 0
+5390   7450  
+5600   7450  
+@@@D7        C12.1        2 0
+5600   7450  
+5600   7350  
+@@@D7        L2.1         2 0
+5600   7450  
+5850   7450  
+
+*SIGNAL* SPICS0 0 0
+@@@O0        U1.32        2 0
+7800   4900  
+7500   4900  
+@@@O29       U4.1         2 0
+14700  2800  
+14500  2800  
+
+*SIGNAL* SPIWP 0 0
+@@@O4        U1.31        2 0
+7800   4800  
+7500   4800  
+@@@O33       U4.3         2 0
+14700  3200  
+14500  3200  
+
+*NETNAMES*
+
+
+
+SPICS0       @@@O0        400    0      0 8 800    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPICLK       @@@O1        400    0      0 8 800    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPID         @@@O2        400    0      0 8 800    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPIO         @@@O3        400    0      0 8 800    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPIWP        @@@O4        400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+SPIHD        @@@O5        400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+P3V3         @@@O9        -400   0      0 9 250    0      0 9 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O10       0      250    0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+QSPI_D1      @@@O11       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_SCL     @@@O12       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D3      @@@O13       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D2      @@@O14       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D0      @@@O15       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+LCD_RESET    @@@O16       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+I2C_SCL      @@@O17       -400   0      0 9 100    0      0 9 -1 10 69 "Regular MS UI Gothic"
+TP_INT       @@@O18       -400   0      0 9 150    0      0 9 -1 10 69 "Regular MS UI Gothic"
+TP_RST       @@@O19       -400   0      0 9 100    0      0 9 -1 10 69 "Regular MS UI Gothic"
+LCD_CS       @@@O20       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+DN           @@@O22       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+DP           @@@O23       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+XTAL_P       U1.54        70     10     0 0 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+XTAL_N       U1.53        70     10     0 0 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+CHIP_PU      @@@O24       400    0      0 8 -100   0      0 8 -1 10 69 "Regular MS UI Gothic"
+SPICS0       @@@O29       400    0      0 8 900    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPICLK       @@@O30       400    0      0 8 900    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPID         @@@O31       400    0      0 8 850    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPIO         @@@O32       400    0      0 8 850    0      0 3 -1 10 69 "Regular MS UI Gothic"
+SPIWP        @@@O33       400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+SPIHD        @@@O34       400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+QSPI_D0      @@@O42       350    0      0 8 50     0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D1      @@@O43       350    0      0 8 50     0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D2      @@@O44       350    0      0 8 50     0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_D3      @@@O45       350    0      0 8 50     0      0 9 -1 10 69 "Regular MS UI Gothic"
+QSPI_SCL     @@@O46       350    0      0 8 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+LCD_RESET    @@@O47       350    0      0 8 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+LCD_TE       @@@O48       350    0      0 8 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+LCD_CS       @@@O49       350    0      0 8 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O50       300    0      0 8 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+I2C_SCL      @@@O51       350    0      0 8 -50    0      0 9 -1 10 69 "Regular MS UI Gothic"
+I2C_SDA      @@@O52       350    0      0 8 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+TP_INT       @@@O53       350    0      0 8 -50    0      0 9 -1 10 69 "Regular MS UI Gothic"
+TP_RST       @@@O54       350    0      0 8 -50    0      0 9 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O55       300    0      0 8 50     0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O58       0      300    0 6 0      0      0 0 -1 10 69 "Default Font"
+VDD3V3       @@@O65       0      250    0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+P3V3         @@@O67       400    0      0 8 -150   0      0 8 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O68       0      250    0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+CHIP_PU      @@@O70       350    0      0 8 -100   0      0 8 -1 10 69 "Regular MS UI Gothic"
+VDD_MAIN     @@@O71       0      250    0 4 -410   100    0 0 -1 10 69 "Default Font"
+VDD3V3       @@@O72       0      250    0 4 -410   100    0 0 -1 10 69 "Default Font"
+VDD_MAIN     @@@O78       0      250    0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD_SPI      @@@O79       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+VDD_SPI      @@@O80       400    0      0 8 -50    0      0 8 -1 10 69 "Regular MS UI Gothic"
+LCD_TE       @@@O81       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+I2C_SDA      @@@O82       -400   0      0 9 100    0      0 9 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O85       0      250    0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+LD_IN        @@@O86       -400   0      0 9 0      0      0 9 -1 10 69 "Regular MS UI Gothic"
+LD_IN        @@@O87       350    0      0 8 -150   0      0 8 -1 10 69 "Regular MS UI Gothic"
+DP           @@@O89       400    0      0 8 -150   0      0 8 -1 10 69 "Regular MS UI Gothic"
+DN           @@@O90       400    0      0 8 -150   0      0 8 -1 10 69 "Regular MS UI Gothic"
+VDD_MAIN     @@@O91       450    0      0 12 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O92       0      250    0 4 -150   0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O94       -450   -50    0 4 -150   0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD_MAIN     @@@O98       400    0      0 4 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+UART0_RXD    @@@O101      400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+UART0_TXD    @@@O102      400    0      0 8 0      0      0 8 -1 10 69 "Regular MS UI Gothic"
+UART0_TXD    @@@O104      400    0      0 8 -50    0      0 8 -1 10 69 "Regular MS UI Gothic"
+UART0_RXD    @@@O105      400    0      0 8 -50    0      0 8 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O106      450    0      0 12 0      0      0 0 -1 10 69 "Regular MS UI Gothic"
+VDD3V3       @@@O109      0      250    0 4 -50    0      0 0 -1 10 100 "Default Font"
+
+*END*     OF ASCII OUTPUT FILE

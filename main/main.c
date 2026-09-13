@@ -192,6 +192,10 @@ static guide_sub_mode_t s_guide_sub_mode = GUIDE_SUB_STANDBY;
 static uint8_t s_clock_option = 1; // 0: Clock 1, 1: Clock 2, 2: Clock 3, 3: Auto
 static display_mode_t s_last_base_mode = DISPLAY_MODE_GUIDE;
 static bool s_is_manual_mode_switch = false;
+static uint8_t s_current_speed = 255;
+static uint32_t s_low_speed_start_tick = 0;
+static bool s_auto_switched_from_idle = false;
+static guide_sub_mode_t s_idle_saved_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
 
 int get_current_display_mode(void) { return (int)s_current_mode; }
 // static bool s_virtual_drive_active = false; // Removed
@@ -405,6 +409,7 @@ static uint8_t s_setting_page_index = 1; // 1 or 2
 // Forward declarations
 static void switch_display_mode(display_mode_t new_mode);
 static void update_display_mode_ui(display_mode_t mode);
+static void apply_hw_brightness(uint8_t level);
 void update_heartbeat_lvgl(void);
 void update_heartbeat_ble(void);
 void update_heartbeat_button(void);
@@ -472,6 +477,8 @@ void update_album_option_from_ble(uint8_t mode);
 static void create_ota_ui(void); // Forward decl
 static display_mode_t s_nvs_restored_mode =
     DISPLAY_MODE_GUIDE; // NVS에서 복구할 마지막 모드 보관용
+static bool s_display_flipped = true;
+static void apply_display_flip(bool flip);
 
 // Labels for new modes
 static lv_obj_t *s_clock_canvas = NULL;
@@ -488,20 +495,67 @@ static void reset_album_to_default_image(void);
 static void show_restart_msg(void);
 
 // ==================== NVS Settings Storage ====================
+static uint8_t s_last_saved_flip = 0xFF;
+
+void save_nvs_flip_mode(bool flip) {
+  uint8_t flip_val = flip ? 1 : 0;
+  if (s_last_saved_flip == flip_val) {
+    return; // Already saved with the same value
+  }
+
+  nvs_handle_t nvs;
+  esp_err_t err = nvs_open("storage", NVS_READWRITE, &nvs);
+  if (err == ESP_OK) {
+    nvs_set_u8(nvs, "flip_mode", flip_val);
+    err = nvs_commit(nvs);
+    nvs_close(nvs);
+
+    if (err == ESP_OK) {
+      s_last_saved_flip = flip_val;
+      ESP_LOGW("NVS", "==================================================");
+      ESP_LOGW("NVS", "HUD MODE (flip_mode) SAVED TO NVS: %d (%s)",
+               flip_val, flip_val ? "NORMAL (FLIPPED)" : "HUD MODE");
+      ESP_LOGW("NVS", "==================================================");
+    } else {
+      ESP_LOGE("NVS", "NVS Commit FAILED for flip_mode: %s", esp_err_to_name(err));
+    }
+  } else {
+    ESP_LOGE("NVS", "NVS Open FAILED for flip_mode: %s", esp_err_to_name(err));
+  }
+}
+
+static void apply_display_flip(bool flip) {
+  s_display_flipped = flip;
+  if (s_lvgl_mutex) {
+    xSemaphoreTakeRecursive(s_lvgl_mutex, portMAX_DELAY);
+  }
+  if (lv_scr_act()) {
+    lv_obj_invalidate(lv_scr_act());
+  }
+  if (s_lvgl_mutex) {
+    xSemaphoreGiveRecursive(s_lvgl_mutex);
+  }
+  ESP_LOGI("DISPLAY", "Display flip mode set to %s (Software 180-deg rotation)",
+           flip ? "Normal Mode (Flipped)" : "HUD Mode");
+  save_nvs_flip_mode(flip);
+}
+
 void save_nvs_settings(void) {
-  // [User Request] Do not save to NVS during Virtual Drive mode
-  if (s_virt_drive_active) {
+  // [User Request] Do not save to NVS during Virtual Drive mode or temporary auto-idle display
+  if (s_virt_drive_active || s_auto_switched_from_idle) {
     return;
   }
   static uint8_t last_bright = 0xFF;
   static uint8_t last_album = 0xFF;
   static uint8_t last_clock = 0xFF;
   static uint8_t last_mode = 0xFF;
+  static uint8_t last_flip = 0xFF;
 
   // [User Request] NVS 저장 시도 로그 추가 및 비교 로직 유지하되 로그로 상태
   // 확인
   if (last_bright == s_brightness_level && last_album == s_album_option &&
-      last_clock == s_clock_option && last_mode == (uint8_t)s_current_mode) {
+      last_clock == s_clock_option && last_mode == (uint8_t)s_current_mode &&
+      last_flip == (uint8_t)s_display_flipped) {
     // ESP_LOGD(TAG, "NVS Save skipped: same as last session");
     return; // No change
   }
@@ -512,6 +566,7 @@ void save_nvs_settings(void) {
     nvs_set_u8(nvs, "bright_lvl", s_brightness_level);
     nvs_set_u8(nvs, "album_opt", s_album_option);
     nvs_set_u8(nvs, "clock_opt", s_clock_option);
+    nvs_set_u8(nvs, "flip_mode", s_display_flipped ? 1 : 0);
 
     uint8_t save_val = 0;
     if (s_current_mode == DISPLAY_MODE_CLOCK)
@@ -530,8 +585,10 @@ void save_nvs_settings(void) {
       last_album = s_album_option;
       last_clock = s_clock_option;
       last_mode = (uint8_t)s_current_mode;
-      ESP_LOGW(TAG, "NVS Settings SAVED: Br=%d, Alb=%d, Clk=%d, Mode=%d",
-               last_bright, last_album, last_clock, save_val);
+      last_flip = (uint8_t)s_display_flipped;
+      s_last_saved_flip = (uint8_t)s_display_flipped;
+      ESP_LOGW(TAG, "NVS Settings SAVED: Br=%d, Alb=%d, Clk=%d, Mode=%d, Flip=%d",
+               last_bright, last_album, last_clock, save_val, last_flip);
     } else {
       ESP_LOGE(TAG, "NVS Commit FAILED: %s", esp_err_to_name(err));
     }
@@ -551,6 +608,16 @@ static void load_nvs_settings(void) {
       s_album_option = val;
     if (nvs_get_u8(nvs, "clock_opt", &val) == ESP_OK && val <= 3)
       s_clock_option = val;
+    if (nvs_get_u8(nvs, "flip_mode", &val) == ESP_OK) {
+      s_display_flipped = (val != 0);
+      s_last_saved_flip = val ? 1 : 0;
+      ESP_LOGW(TAG, "NVS LOADED: flip_mode = %d (%s)", val,
+               s_display_flipped ? "NORMAL (FLIPPED)" : "HUD MODE");
+    } else {
+      s_display_flipped = true;
+      s_last_saved_flip = 1;
+      ESP_LOGI(TAG, "NVS: flip_mode not found, defaulting to NORMAL MODE (1)");
+    }
     if (nvs_get_u8(nvs, "boot_mode", &val) == ESP_OK) {
       // [User Request] 0:기본(GUIDE), 1:시계, 2:앨범 매핑 적용
       if (val == 1)
@@ -584,12 +651,14 @@ static void load_nvs_settings(void) {
 
     nvs_close(nvs);
     ESP_LOGW(TAG, "################################################");
-    ESP_LOGW(TAG, "NVS LOADED: Br=%d, Alb=%d, Clk=%d, SN=%s",
+    ESP_LOGW(TAG, "NVS LOADED: Br=%d, Alb=%d, Clk=%d, Flip=%d, SN=%s",
              s_brightness_level, s_album_option, s_clock_option,
-             s_device_serial);
+             s_display_flipped, s_device_serial);
     ESP_LOGW(TAG, "################################################");
   } else {
     ESP_LOGE(TAG, "NVS empty or failed to open, using defaults");
+    s_display_flipped = true;
+    s_last_saved_flip = 1;
     strcpy(s_device_serial, "NO_SN");
     strcpy(s_app_reg_num, "판매사에 문의하세요..");
   }
@@ -1139,6 +1208,14 @@ static void process_app_command(const uint8_t *data, size_t len) {
           "TBT command received. Auto-switching from BOOT to SPEEDOMETER.");
       s_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
       switch_display_mode(DISPLAY_MODE_GUIDE);
+    } else if (s_auto_switched_from_idle &&
+               (s_current_mode == DISPLAY_MODE_ALBUM || s_current_mode == DISPLAY_MODE_CLOCK)) {
+      ESP_LOGI(TAG, "TBT command received while in auto-idle. Returning to GUIDE.");
+      s_auto_switched_from_idle = false;
+      s_guide_sub_mode = GUIDE_SUB_NAVI;
+      s_is_manual_mode_switch = true;
+      switch_display_mode(DISPLAY_MODE_GUIDE);
+      s_is_manual_mode_switch = false;
     }
 
     uint8_t tbt_data3 = (len >= 7) ? data[6] : 0;
@@ -1165,6 +1242,14 @@ static void process_app_command(const uint8_t *data, size_t len) {
           "Safety command received. Auto-switching from BOOT to SPEEDOMETER.");
       s_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
       switch_display_mode(DISPLAY_MODE_GUIDE);
+    } else if (s_auto_switched_from_idle &&
+               (s_current_mode == DISPLAY_MODE_ALBUM || s_current_mode == DISPLAY_MODE_CLOCK)) {
+      ESP_LOGI(TAG, "Safety command received while in auto-idle. Returning to GUIDE.");
+      s_auto_switched_from_idle = false;
+      s_guide_sub_mode = s_idle_saved_guide_sub_mode;
+      s_is_manual_mode_switch = true;
+      switch_display_mode(DISPLAY_MODE_GUIDE);
+      s_is_manual_mode_switch = false;
     }
 
     safety_drive(start, id, commend, data_length, safety_data1, safety_data2,
@@ -2561,15 +2646,15 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
           }
           s_speedometer_safety_tt_val = (uint8_t)limit_speed;
 
-          ESP_LOGI(TAG,
+          /* ESP_LOGI(TAG,
                    "Speedometer Arc Update: data2=%u, limit_speed=%d, "
                    "current_sub_mode=%d",
-                   data2, limit_speed, s_guide_sub_mode);
+                   data2, limit_speed, s_guide_sub_mode); */
 
           if (limit_speed > 0) {
             int start_angle = (int)((limit_speed / 220.0) * 228.0);
-            ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
-                     start_angle, limit_speed);
+            /* ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
+                     start_angle, limit_speed); */
 
             // 시인성 확보를 위해 두께와 색상을 강제 재설정 (주황색/10px로 복구)
             lv_obj_set_style_arc_width(s_speedometer_safety_arc, 10,
@@ -2674,14 +2759,14 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
           }
           s_speedometer_safety_tt_val = (uint8_t)limit_speed;
 
-          ESP_LOGI(TAG,
+          /* ESP_LOGI(TAG,
                    "Speedometer Arc (Else) Update: data2=%u, limit_speed=%d",
-                   data2, limit_speed);
+                   data2, limit_speed); */
 
           if (limit_speed > 0) {
             int start_angle = (int)((limit_speed / 220.0) * 228.0);
-            ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
-                     start_angle, limit_speed);
+            /* ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
+                     start_angle, limit_speed); */
 
             // 시인성 확보를 위해 두께와 색상을 강제 재설정 (주황색/10px로 복구)
             lv_obj_set_style_arc_width(s_speedometer_safety_arc, 10,
@@ -2727,8 +2812,8 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
       if (s_circle_ring != NULL) {
         // 빨강링 점멸 시작
         if (s_safety_ring_timer == NULL) {
-          ESP_LOGI(TAG, "Safety Ring FLASH START: mode=%d, d3=%d",
-                   s_current_mode, data3);
+          /* ESP_LOGI(TAG, "Safety Ring FLASH START: mode=%d, d3=%d",
+                   s_current_mode, data3); */
           s_safety_ring_flash_count = 1; // 첫 번째 상태 (빨강)
           s_safety_ring_timer =
               lv_timer_create(safety_ring_timer_cb, 200, NULL);
@@ -2744,7 +2829,7 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
           lv_refr_now(NULL); // 즉시 갱신 강제
         } else {
           // 이미 동작 중이면 리셋하여 다시 2회 반복 시작
-          ESP_LOGI(TAG, "Safety Ring FLASH RESET: mode=%d", s_current_mode);
+          /* ESP_LOGI(TAG, "Safety Ring FLASH RESET: mode=%d", s_current_mode); */
           lv_timer_reset(s_safety_ring_timer);
           s_safety_ring_flash_count = 1;
           lv_obj_set_style_border_color(s_circle_ring, lv_color_hex(0xFF0000),
@@ -3008,10 +3093,10 @@ static void safety_drive(uint8_t start, uint8_t id, uint8_t commend,
      data1, data2, data3, data4, data5,
            data6); */
 
-  ESP_LOGI(TAG,
+  /* ESP_LOGI(TAG,
            "Safety_DRV Packet: start=0x%02X id=0x%02X cmd=0x%02X d1=0x%02X "
            "d2=0x%02X d3=0x%02X",
-           start, id, commend, data1, data2, data3);
+           start, id, commend, data1, data2, data3); */
 
   // data1 == 0: 모든 안전운행 정보를 화면에서 지운다
   if (data1 == 0x00) {
@@ -3135,11 +3220,11 @@ static void update_circle_display(uint8_t start, uint8_t id, uint8_t commend,
   // (clear_display 후 다시 표시될 때)
   hide_black_screen_overlay();
 
-  ESP_LOGI(TAG,
+  /* ESP_LOGI(TAG,
            "circle_dwg called: start=0x%02X "
            "id=0x%02X commend=0x%02X "
            "dlen=0x%02X data1=0x%02X",
-           start, id, commend, data_length, data1);
+           start, id, commend, data_length, data1); */
 
   if (start != 0x19 || id != 0x4D || commend != 0x04 || data_length != 0x01) {
     ESP_LOGW(TAG, "circle_dwg: Invalid command format");
@@ -3259,6 +3344,65 @@ data_length, uint8_t data1) {
 data_length, data1);
 } */
 
+// 외곽 링의 그라데이션 그리기 콜백 함수
+// 12시 방향(270도)이 가장 밝고, 6시 방향(90도)이 가장 어둡도록 함
+static void circle_ring_draw_event_cb(lv_event_t * e) {
+  lv_obj_t * obj = lv_event_get_target(e);
+  lv_draw_ctx_t * draw_ctx = lv_event_get_draw_ctx(e);
+
+  lv_color_t base_color = lv_obj_get_style_border_color(obj, 0);
+  lv_coord_t width = lv_obj_get_style_border_width(obj, 0);
+
+  lv_area_t coords;
+  lv_obj_get_coords(obj, &coords);
+
+  lv_point_t center;
+  center.x = coords.x1 + lv_area_get_width(&coords) / 2;
+  center.y = coords.y1 + lv_area_get_height(&coords) / 2;
+
+  // 아크 중심선 기준 반지름 계산
+  uint16_t radius = (lv_area_get_width(&coords) - width) / 2;
+
+  // 5도 간격(총 72개 세그먼트)으로 링을 그려 그라데이션 표현
+  int seg_deg = 5;
+  for (int angle = 0; angle < 360; angle += seg_deg) {
+    int start_angle = angle;
+    int end_angle = angle + seg_deg;
+
+    float mid_angle = (float)(start_angle + end_angle) / 2.0f;
+
+    // LVGL 각도 좌표계에서 12시 방향은 270도
+    float diff = mid_angle - 270.0f;
+    while (diff < -180.0f) diff += 360.0f;
+    while (diff > 180.0f) diff -= 360.0f;
+    float abs_diff = (diff < 0.0f) ? -diff : diff;
+
+    // 12시(abs_diff = 0)는 가장 밝게 (factor = 1.0)
+    // 6시(abs_diff = 180)는 검정색 (factor = 0.0)
+    float factor = 1.0f - (abs_diff / 180.0f);
+
+    uint32_t c32 = lv_color_to32(base_color);
+    uint8_t r = (c32 >> 16) & 0xFF;
+    uint8_t g = (c32 >> 8) & 0xFF;
+    uint8_t b = c32 & 0xFF;
+
+    uint8_t new_r = (uint8_t)((float)r * factor);
+    uint8_t new_g = (uint8_t)((float)g * factor);
+    uint8_t new_b = (uint8_t)((float)b * factor);
+
+    lv_color_t color = lv_color_make(new_r, new_g, new_b);
+
+    lv_draw_arc_dsc_t arc_dsc;
+    lv_draw_arc_dsc_init(&arc_dsc);
+    arc_dsc.color = color;
+    arc_dsc.width = width;
+    arc_dsc.opa = LV_OPA_COVER;
+    arc_dsc.rounded = 0; // 세그먼트 간 부드러운 연결을 위해 둥글기 제거
+
+    lv_draw_arc(draw_ctx, &arc_dsc, &center, radius, start_angle, end_angle);
+  }
+}
+
 // 외곽 링 객체가 없으면 생성하는 헬퍼 함수
 static void ensure_circle_ring_created(void) {
   if (s_circle_ring == NULL) {
@@ -3266,13 +3410,15 @@ static void ensure_circle_ring_created(void) {
     lv_obj_set_size(s_circle_ring, 463, 463); // 기본 지름 463pt
     // 완전한 원이 되도록 radius를 원형으로 설정
     lv_obj_set_style_radius(s_circle_ring, LV_RADIUS_CIRCLE, 0);
-    // 배경은 투명, 테두리만 표시
+    // 배경은 투명, 테두리 그리기 자체는 비활성(투명)화하고 그리기 이벤트에서 직접 드로잉
     lv_obj_set_style_bg_opa(s_circle_ring, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(s_circle_ring, 5, 0); // 기본 두께 5pt
-    lv_obj_set_style_border_opa(s_circle_ring, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_opa(s_circle_ring, LV_OPA_TRANSP, 0); // 테두리 그리기 투명
     lv_obj_set_style_pad_all(s_circle_ring, 0, 0);
     lv_obj_set_scrollbar_mode(s_circle_ring, LV_SCROLLBAR_MODE_OFF);
     lv_obj_center(s_circle_ring);                       // 화면 중앙 기준 원
+    // 커스텀 드로잉 등록
+    lv_obj_add_event_cb(s_circle_ring, circle_ring_draw_event_cb, LV_EVENT_DRAW_MAIN, NULL);
     lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN); // 초기에는 숨김
   }
 }
@@ -3530,9 +3676,6 @@ static void update_clear_display(uint8_t data1) {
     // 중이 아닐 때만)
     if (s_current_mode == DISPLAY_MODE_GUIDE &&
         s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
-      bool safety_visible =
-          (s_speedometer_safety_image != NULL &&
-           !lv_obj_has_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN));
       if (s_speedometer_unit_label) {
         lv_obj_clear_flag(s_speedometer_unit_label, LV_OBJ_FLAG_HIDDEN);
       }
@@ -3902,6 +4045,24 @@ static size_t utf8_strlen_simple(const char *s) {
 // NOTE: This function should only be called
 // from LVGL handler task
 static void update_speed_label(uint8_t data1, uint8_t speed) {
+  if (data1 == 0x00) {
+    s_current_speed = speed;
+
+    // 속도가 3km/h 초과 시 정차 자동 전환 상태에서 즉시 원래 모드로 복귀
+    if (s_auto_switched_from_idle &&
+        (s_current_mode == DISPLAY_MODE_ALBUM || s_current_mode == DISPLAY_MODE_CLOCK)) {
+      if (speed > 3) {
+        ESP_LOGI(TAG, "Moving: Speed %u > 3 km/h -> Restoring to GUIDE (sub-mode: %d)",
+                 speed, s_idle_saved_guide_sub_mode);
+        s_auto_switched_from_idle = false;
+        s_guide_sub_mode = s_idle_saved_guide_sub_mode;
+        s_is_manual_mode_switch = true;
+        switch_display_mode(DISPLAY_MODE_GUIDE);
+        s_is_manual_mode_switch = false;
+      }
+    }
+  }
+
   // Remove generic drawing from here, move explicitly to SPEEDOMETER mode
   // condition.
   hide_black_screen_overlay();
@@ -5385,6 +5546,7 @@ static TickType_t s_last_ble_activity_tick = 0;
 // Deleted legacy Bluedroid notification logic residue
 
 void log_ble_packet(const uint8_t *data, size_t len, const char *prefix) {
+  return; // 블루투스 통신 로그 제거
   if (data == NULL || len < 2 || data[0] != 0x19 || data[len - 1] != 0x2F) {
     return;
   }
@@ -5628,12 +5790,31 @@ static void lvgl_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
                             ? LCD_FLUSH_CHUNK_HEIGHT
                             : lines_remaining;
 
-    // Byte swap and copy to chunk buffer
-    // (AI_DRV reference: (c >> 8) | (c << 8))
     int pixel_count = width * lines_to_copy;
-    for (int i = 0; i < pixel_count; i++) {
-      uint16_t c = src_ptr[i].full;
-      s_flush_chunk_buf[i] = (c >> 8) | (c << 8);
+    // Byte swap and copy to chunk buffer with horizontal flip (mirroring) for both Normal and HUD modes
+    if (s_display_flipped) {
+      int chunk_line_idx = 0;
+      for (int cur_y = y_start; cur_y < y_start + lines_to_copy; cur_y++) {
+        int src_y = (LCD_V_RES - 1 - cur_y);
+        if (src_y < 0) src_y = 0;
+        if (src_y >= LCD_V_RES) src_y = LCD_V_RES - 1;
+        const lv_color_t *src_line = color_p + (src_y * width);
+        uint16_t *dst_line = s_flush_chunk_buf + (chunk_line_idx * width);
+        for (int x = 0; x < width; x++) {
+          uint16_t c = src_line[width - 1 - x].full;
+          dst_line[x] = (c >> 8) | (c << 8);
+        }
+        chunk_line_idx++;
+      }
+    } else {
+      for (int line_idx = 0; line_idx < lines_to_copy; line_idx++) {
+        const lv_color_t *src_line = src_ptr + (line_idx * width);
+        uint16_t *dst_line = s_flush_chunk_buf + (line_idx * width);
+        for (int x = 0; x < width; x++) {
+          uint16_t c = src_line[width - 1 - x].full;
+          dst_line[x] = (c >> 8) | (c << 8);
+        }
+      }
     }
 
     // Draw chunk (with retry if queue is full)
@@ -5799,34 +5980,13 @@ static lv_font_t *load_font_from_fs(const char *font_name) {
 static void load_all_fonts(void) {
   ESP_LOGI(TAG, "Font: Starting bulk font loading...");
   s_font_kopub_20 = load_font_from_fs("font_kopub_20");
-  vTaskDelay(pdMS_TO_TICKS(20));
   s_font_kopub_25 = load_font_from_fs("font_kopub_25");
-  vTaskDelay(pdMS_TO_TICKS(20));
-
   s_font_kopub_35 = load_font_from_fs("font_kopub_35");
-  vTaskDelay(pdMS_TO_TICKS(20));
   s_font_kopub_40 = load_font_from_fs("font_kopub_40");
-  vTaskDelay(pdMS_TO_TICKS(20));
   s_font_orb_100 = load_font_from_fs("font_orb_100");
-  vTaskDelay(pdMS_TO_TICKS(20));
   s_font_orb_155 = load_font_from_fs("font_orb_155");
-  vTaskDelay(pdMS_TO_TICKS(20));
   s_font_kopub_100 = load_font_from_fs("Kopub_100");
-  vTaskDelay(pdMS_TO_TICKS(20));
-
-  /* ESP_LOGI(TAG, "Font: Attempting to load gman_188...");
-  s_font_gman_188 = load_font_from_fs("font_gman_188");
-  vTaskDelay(pdMS_TO_TICKS(20)); */
-
-  ESP_LOGI(TAG, "Font: Attempting to load addr_30...");
   s_font_addr_30 = load_font_from_fs("font_addr_30");
-  vTaskDelay(pdMS_TO_TICKS(20));
-
-  // Link font_gman_188 as fallback for font_orb_155 if both are available
-  /* if (s_font_orb_155 && s_font_gman_188) {
-    s_font_orb_155->fallback = s_font_gman_188;
-    ESP_LOGI(TAG, "Font: Linked font_gman_188 as fallback for font_orb_155");
-  } */
   ESP_LOGI(TAG, "Font: All fonts processed.");
 }
 
@@ -5867,8 +6027,7 @@ static esp_err_t lvgl_init(void) {
            (char)LV_FS_POSIX_LETTER, LV_FS_POSIX_PATH);
 #endif
 
-  // Load fonts from LittleFS before UI creation
-  load_all_fonts();
+  // Font loading moved to post-display initialization to show logo.jpg early
 
   // Initialize PNG decoder (uses lodepng
   // library, allocates memory via
@@ -5977,28 +6136,72 @@ static esp_err_t lvgl_init(void) {
   lv_obj_set_style_bg_color(s_setting_screen, lv_color_black(), 0);
   lv_obj_set_style_bg_color(s_ota_screen, lv_color_black(), 0);
 
-  // Load HUD screen as default (so lv_scr_act() returns it for following
-  // creations)
-  lv_scr_load(s_hud_screen);
+  // Load BOOT screen first for early intro/logo display
+  lv_scr_load(s_boot_screen);
 
   // Immediately render black screen to prevent green flash on boot
   lv_timer_handler();
   lv_refr_now(NULL);
 
-  // Now that a black frame is ready, turn ON display and set brightness
+  // Now that a black frame is ready, turn ON display panel
   esp_lcd_panel_disp_on_off(s_lcd_panel, true);
   vTaskDelay(pdMS_TO_TICKS(100));
-  set_lcd_brightness(
-      s_brightness_level,
-      true); // [User Request] Use restored NVS level instead of hardcoded 0
 
   ESP_LOGI(TAG, "LVGL: Black screen rendered and panel active");
 
-  // Create intro image object immediately to prevent green flash
-  s_intro_image = lv_img_create(lv_scr_act());
-  lv_obj_add_flag(s_intro_image, LV_OBJ_FLAG_HIDDEN); // Initially hidden
-  lv_obj_center(s_intro_image);
-  ESP_LOGI(TAG, "LVGL: Intro image object created (hidden)");
+  // Apply restored display orientation (HUD flip mode)
+  apply_display_flip(s_display_flipped);
+
+  // Check and render Intro GIF or Logo Image IMMEDIATELY so user sees it right away (~2.4s)
+  bool early_shown = false;
+  const char *early_gif_paths[] = {"/littlefs/intro.gif", "/littlefs/flash_data/intro.gif"};
+  const char *early_gif_lv[] = {"S:/littlefs/intro.gif", "S:/littlefs/flash_data/intro.gif"};
+
+  for (int i = 0; i < 2; i++) {
+    struct stat st;
+    if (stat(early_gif_paths[i], &st) == 0) {
+      ESP_LOGI(TAG, "Early Boot: Intro GIF found at %s. Displaying immediately...", early_gif_paths[i]);
+      s_intro_image = lv_gif_create(s_boot_screen);
+      if (s_intro_image) {
+        lv_gif_set_src(s_intro_image, early_gif_lv[i]);
+        lv_obj_clear_flag(s_intro_image, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_center(s_intro_image);
+        lv_gif_set_loop_count(s_intro_image, 1);
+        apply_hw_brightness(5);
+        lv_timer_handler();
+        lv_refr_now(NULL);
+        early_shown = true;
+      }
+      break;
+    }
+  }
+
+  if (!early_shown) {
+    const char *early_logo_paths[] = {
+        "/littlefs/logo.jpg", "/littlefs/flash_data/logo.jpg",
+        "/littlefs/logo.png", "/littlefs/flash_data/logo.png"};
+    const char *early_logo_lv[] = {
+        "S:/littlefs/logo.jpg", "S:/littlefs/flash_data/logo.jpg",
+        "S:/littlefs/logo.png", "S:/littlefs/flash_data/logo.png"};
+
+    for (int i = 0; i < 4; i++) {
+      struct stat st;
+      if (stat(early_logo_paths[i], &st) == 0) {
+        ESP_LOGI(TAG, "Early Boot: Logo image found at %s. Displaying immediately...", early_logo_paths[i]);
+        s_intro_image = lv_img_create(s_boot_screen);
+        if (s_intro_image) {
+          lv_img_set_src(s_intro_image, early_logo_lv[i]);
+          lv_obj_clear_flag(s_intro_image, LV_OBJ_FLAG_HIDDEN);
+          lv_obj_center(s_intro_image);
+          apply_hw_brightness(5);
+          lv_timer_handler();
+          lv_refr_now(NULL);
+          early_shown = true;
+        }
+        break;
+      }
+    }
+  }
 
   // Initialize Touch
   if (init_touch() == ESP_OK) {
@@ -6006,17 +6209,20 @@ static esp_err_t lvgl_init(void) {
     lv_indev_drv_init(&indev_drv);
     indev_drv.type = LV_INDEV_TYPE_POINTER;
     indev_drv.read_cb = touch_read_cb;
-    indev_drv.gesture_limit = 30; // 픽셀 이동 기준 감도 향상
+    indev_drv.gesture_limit = 30;
     indev_drv.gesture_min_velocity = 10;
     s_touch_indev = lv_indev_drv_register(&indev_drv);
   }
 
-  // Create UI for Clock and Album modes (background ready)
+  // Load all required fonts in background while logo/intro is visible
+  load_all_fonts();
+
+  // Create UI for Clock and Album modes
   create_boot_ui();
   create_clock_ui();
-  create_clock2_ui();      // Create Clock 2
-  create_clock3_ui();      // Create Clock 3
-  create_speedometer_ui(); // Create Speedometer
+  create_clock2_ui();
+  create_clock3_ui();
+  create_speedometer_ui();
   create_album_ui();
   create_setting_ui();
   create_ota_ui();
@@ -7155,16 +7361,6 @@ static void setting_page_cb(lv_event_t *e) {
       lv_label_set_text(s_setting_title_label, "SETUP 2");
   }
 }
-
-// 다음 모드로 전환
-/* static void switch_to_next_mode(void) {
-  display_mode_t next_mode =
-      (display_mode_t)((s_current_mode + 1) %
-DISPLAY_MODE_MAX);
-  switch_display_mode(next_mode);
-} */
-
-// 버튼 인터럽트 핸들러
 static void IRAM_ATTR button_isr_handler(void *arg) {
   uint32_t gpio_num = (uint32_t)arg;
   xQueueSendFromISR(s_button_queue, &gpio_num, NULL);
@@ -7584,7 +7780,6 @@ static void lvgl_handler_task(void *arg) {
 
     // Give a tiny breather for other tasks (touch, ble rx)
     vTaskDelay(pdMS_TO_TICKS(1));
-
     // 2. Safe time display update
     if (s_time_display_update_required) {
       s_time_display_update_required = false;
@@ -7595,8 +7790,56 @@ static void lvgl_handler_task(void *arg) {
       update_heartbeat_lvgl();
     }
 
-    // [Fix] 화면 클리어 요청을 가장 먼저 처리하여,
-    // 동일 루프 내에서 뒤따르는 데이터(속도, TBT 등)가 지워지는 현상 방지
+    // 3. [User Request] 내비모드 또는 안전운행모드에서 GPS 수신 완료(Fix) 시 현재속도 3km/h 이하가 10초 이상 지속 시 앨범(사진 없으면 시계) 표시
+    if (!s_auto_switched_from_idle &&
+        (s_last_gps_status == 0x01 || s_virt_drive_active) &&
+        s_current_mode == DISPLAY_MODE_GUIDE &&
+        (s_guide_sub_mode == GUIDE_SUB_NAVI || s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER)) {
+      if (s_current_speed != 255 && s_current_speed <= 3) {
+        uint32_t now_tick = xTaskGetTickCount();
+        if (s_low_speed_start_tick == 0) {
+          s_low_speed_start_tick = now_tick;
+          ESP_LOGI(TAG, "Idle: Speed <= 3 km/h (%u) in %s. Starting 10s idle timer.",
+                   s_current_speed,
+                   (s_guide_sub_mode == GUIDE_SUB_NAVI) ? "NAVI" : "SPEEDOMETER");
+        } else if ((now_tick - s_low_speed_start_tick) >= pdMS_TO_TICKS(10000)) {
+          // 10초 이상 3km/h 이하 지속 감지
+          s_idle_saved_guide_sub_mode = s_guide_sub_mode;
+          s_auto_switched_from_idle = true;
+          s_low_speed_start_tick = 0;
+
+          if (!s_album_scanned) {
+            scan_intro_images();
+          }
+
+          s_is_manual_mode_switch = true;
+          if (s_image_count > 0) {
+            ESP_LOGW(TAG, "Idle: Speed <= 3km/h for 10s -> Auto-switching to ALBUM (%d images)",
+                     s_image_count);
+            reset_album_to_default_image();
+            switch_display_mode(DISPLAY_MODE_ALBUM);
+          } else {
+            ESP_LOGW(TAG, "Idle: Speed <= 3km/h for 10s -> No album images, auto-switching to CLOCK");
+            switch_display_mode(DISPLAY_MODE_CLOCK);
+          }
+          s_is_manual_mode_switch = false;
+        }
+      } else {
+        s_low_speed_start_tick = 0;
+      }
+    } else if (s_auto_switched_from_idle &&
+               (s_current_mode == DISPLAY_MODE_ALBUM || s_current_mode == DISPLAY_MODE_CLOCK)) {
+      if (s_current_speed != 255 && s_current_speed > 3) {
+        ESP_LOGI(TAG, "Moving: Speed %u > 3 km/h -> Restoring to GUIDE (sub-mode: %d)",
+                 s_current_speed, s_idle_saved_guide_sub_mode);
+        s_auto_switched_from_idle = false;
+        s_guide_sub_mode = s_idle_saved_guide_sub_mode;
+        s_is_manual_mode_switch = true;
+        switch_display_mode(DISPLAY_MODE_GUIDE);
+        s_is_manual_mode_switch = false;
+      }
+    }
+
     if (s_clear_display_queue != NULL) {
       clear_display_request_t clear_req;
       if (xQueueReceive(s_clear_display_queue, &clear_req, 0) == pdTRUE) {
@@ -7978,11 +8221,11 @@ static int hid_on_access(uint16_t conn_handle, uint16_t attr_handle,
 static int dis_on_access(uint16_t conn_handle, uint16_t attr_handle,
                          struct ble_gatt_access_ctxt *ctxt, void *arg) {
   uint16_t uuid16 = ble_uuid_u16(ctxt->chr->uuid);
-  if (uuid16 == 0x2A29) {
-    os_mbuf_append(ctxt->om, "MOVISION_KR2", 12);
+  if (uuid16 == 0x2A29) { // Manufacturer Name String
+    os_mbuf_append(ctxt->om, "MOVISION", 8);
     return 0;
-  } else if (uuid16 == 0x2A24) {
-    os_mbuf_append(ctxt->om, "HUD1-PRO", 8);
+  } else if (uuid16 == 0x2A24) { // Model Number String (일치: MOVISION_KR2)
+    os_mbuf_append(ctxt->om, "MOVISION_KR2", 12);
     return 0;
   }
   return BLE_ATT_ERR_UNLIKELY;
@@ -8020,14 +8263,16 @@ static int hud_on_access(uint16_t conn_handle, uint16_t attr_handle,
             if (s_rx_expected_len == 0) {
               if (s_rx_pos == 4 && s_rx_buffer[0] == 0x19) {
                 uint8_t id = s_rx_buffer[1];
-                if (id == 0x4D) { // Standard format
+                if (id == 0x4D || (id == 0x4F && s_rx_buffer[2] == 0x06)) { // Standard format (1-byte length)
                   s_rx_expected_len = s_rx_buffer[3] + 5;
                 }
               } else if (s_rx_pos == 5 && s_rx_buffer[0] == 0x19) {
                 uint8_t id = s_rx_buffer[1];
                 if (id == 0x4F || id == 0x50) { // Large data format (FW/IMG)
-                  uint16_t dlen = (s_rx_buffer[3] << 8) | s_rx_buffer[4];
-                  s_rx_expected_len = dlen + 6;
+                  if (s_rx_buffer[2] != 0x06) {
+                    uint16_t dlen = (s_rx_buffer[3] << 8) | s_rx_buffer[4];
+                    s_rx_expected_len = dlen + 6;
+                  }
                 }
               }
             }
@@ -8167,7 +8412,7 @@ static const struct ble_gatt_svc_def s_nimble_svc_defs[] = {
                     .uuid = &s_ota_ctrl_uuid.u,
                     .access_cb = ota_on_access,
                     .val_handle = &s_ota_ctrl_handle,
-                    .flags = BLE_GATT_CHR_F_WRITE,
+                    .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_NO_RSP,
                 },
                 {
                     .uuid = &s_ota_data_uuid.u,
@@ -8733,13 +8978,13 @@ static lv_point_t s_clock1_minute_shadow_points[2];
 static lv_obj_t *s_clock_bg_img = NULL;
 static lv_obj_t *s_clock_center_dot = NULL;
 
-// Clock 2 Objects (Reverted to Gold Stick Style)
-static lv_obj_t *s_clock2_hour_line;
-static lv_obj_t *s_clock2_minute_line;
-static lv_obj_t *s_clock2_second_line;
-static lv_point_t s_clock2_hour_points[2];
-static lv_point_t s_clock2_minute_points[2];
-static lv_point_t s_clock2_second_points[2];
+// Clock 2 Objects (AutoViScope Digital Clock)
+static lv_obj_t *s_clock2_hour_label = NULL;
+static lv_obj_t *s_clock2_colon1_label = NULL;
+static lv_obj_t *s_clock2_min_label = NULL;
+static lv_obj_t *s_clock2_date_label = NULL;
+static lv_obj_t *s_clock2_logo_autovi_label = NULL;
+static lv_obj_t *s_clock2_logo_scope_label = NULL;
 
 // Clock 3 Objects (Tesla-Inspired Analog - Using rotated images)
 static lv_obj_t *s_clock3_bg_img = NULL;
@@ -9009,36 +9254,23 @@ static void draw_analog_clock(int hour, int minute, int second) {
 }
 
 static void draw_analog_clock2(int hour, int minute, int second) {
-  if (!s_clock2_hour_line)
+  if (!s_clock2_hour_label)
     return;
-  const int cx = LCD_H_RES / 2;
-  const int cy = LCD_V_RES / 2;
-  const int r = (LCD_H_RES < LCD_V_RES ? LCD_H_RES : LCD_V_RES) / 2 - 20;
 
-  double h_rad = ((hour % 12) * 30 + minute * 0.5 - 90) * M_PI / 180.0;
-  int hl = r * 0.55;
-  s_clock2_hour_points[0].x = cx;
-  s_clock2_hour_points[0].y = cy;
-  s_clock2_hour_points[1].x = cx + (int)(hl * cos(h_rad));
-  s_clock2_hour_points[1].y = cy + (int)(hl * sin(h_rad));
-  lv_line_set_points(s_clock2_hour_line, s_clock2_hour_points, 2);
+  lv_label_set_text_fmt(s_clock2_hour_label, "%02d", hour);
+  lv_label_set_text_fmt(s_clock2_min_label, "%02d", minute);
 
-  double m_rad = (minute * 6 + second * 0.1 - 90) * M_PI / 180.0;
-  int ml = r * 0.8;
-  s_clock2_minute_points[0].x = cx;
-  s_clock2_minute_points[0].y = cy;
-  s_clock2_minute_points[1].x = cx + (int)(ml * cos(m_rad));
-  s_clock2_minute_points[1].y = cy + (int)(ml * sin(m_rad));
-  lv_line_set_points(s_clock2_minute_line, s_clock2_minute_points, 2);
+  time_t now;
+  struct tm t;
+  time(&now);
+  localtime_r(&now, &t);
 
-  double s_rad = (second * 6 - 90) * M_PI / 180.0;
-  int sl = r * 0.85;
-  int s_tail = -50;
-  s_clock2_second_points[0].x = cx + (int)(s_tail * cos(s_rad));
-  s_clock2_second_points[0].y = cy + (int)(s_tail * sin(s_rad));
-  s_clock2_second_points[1].x = cx + (int)(sl * cos(s_rad));
-  s_clock2_second_points[1].y = cy + (int)(sl * sin(s_rad));
-  lv_line_set_points(s_clock2_second_line, s_clock2_second_points, 2);
+  const char *week_days[] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+  if (s_clock2_date_label) {
+    lv_label_set_text_fmt(s_clock2_date_label, "%04d.%02d.%02d %s",
+                          t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+                          week_days[t.tm_wday % 7]);
+  }
 }
 
 static void create_clock_ui(void) {
@@ -9120,33 +9352,74 @@ static void create_clock2_ui(void) {
     return;
   s_clock2_screen = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(s_clock2_screen, lv_color_black(), 0);
-  lv_obj_set_style_bg_opa(s_clock2_screen, LV_OPA_COVER,
-                          0); // Ensure background is opaque black
+  lv_obj_set_style_bg_opa(s_clock2_screen, LV_OPA_COVER, 0);
+  lv_obj_clear_flag(s_clock2_screen, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_scrollbar_mode(s_clock2_screen, LV_SCROLLBAR_MODE_OFF);
+
   ESP_LOGI(TAG,
-           "[CLOCK UI] Loading background: S:/littlefs/clock_2/screen.png");
+           "[CLOCK UI] Loading Digital Clock 2 background: S:/littlefs/clock_2/screen.jpg");
   lv_obj_t *bg_img = lv_img_create(s_clock2_screen);
-  lv_img_set_src(bg_img, "S:/littlefs/clock_2/screen.png");
+  lv_img_set_src(bg_img, "S:/littlefs/clock_2/screen.jpg");
   lv_obj_center(bg_img);
+  lv_obj_clear_flag(bg_img, LV_OBJ_FLAG_CLICKABLE);
 
-  lv_color_t gold_color = lv_color_make(220, 190, 120);
-  s_clock2_hour_line = lv_line_create(s_clock2_screen);
-  lv_obj_set_style_line_width(s_clock2_hour_line, 8, 0);
-  lv_obj_set_style_line_color(s_clock2_hour_line, gold_color, 0);
-  lv_obj_set_style_line_rounded(s_clock2_hour_line, true, 0);
+  // 1. Top Logo ("AutoVi" White + "SCOPE" Orange)
+  lv_obj_t *logo_cont = lv_obj_create(s_clock2_screen);
+  lv_obj_set_size(logo_cont, 300, 45);
+  lv_obj_align(logo_cont, LV_ALIGN_CENTER, 0, -145);
+  lv_obj_set_flex_flow(logo_cont, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(logo_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
+                        LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_bg_opa(logo_cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(logo_cont, 0, 0);
+  lv_obj_set_style_pad_all(logo_cont, 0, 0);
+  lv_obj_set_style_pad_column(logo_cont, 8, 0);
+  lv_obj_clear_flag(logo_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-  s_clock2_minute_line = lv_line_create(s_clock2_screen);
-  lv_obj_set_style_line_width(s_clock2_minute_line, 5, 0);
-  lv_obj_set_style_line_color(s_clock2_minute_line, gold_color, 0);
-  lv_obj_set_style_line_rounded(s_clock2_minute_line, true, 0);
+  s_clock2_logo_autovi_label = lv_label_create(logo_cont);
+  lv_obj_set_style_text_font(s_clock2_logo_autovi_label, &font_kopub_35, 0);
+  lv_obj_set_style_text_color(s_clock2_logo_autovi_label, lv_color_white(), 0);
+  lv_label_set_text(s_clock2_logo_autovi_label, "AutoVi");
 
-  s_clock2_second_line = lv_line_create(s_clock2_screen);
-  lv_obj_set_style_line_width(s_clock2_second_line, 2, 0);
-  lv_obj_set_style_line_color(s_clock2_second_line, gold_color, 0);
-  lv_obj_set_style_line_rounded(s_clock2_second_line, true, 0);
+  s_clock2_logo_scope_label = lv_label_create(logo_cont);
+  lv_obj_set_style_text_font(s_clock2_logo_scope_label, &font_kopub_25, 0);
+  lv_obj_set_style_text_color(s_clock2_logo_scope_label, lv_color_hex(0xFF6D00), 0);
+  lv_label_set_text(s_clock2_logo_scope_label, "SCOPE");
 
-  lv_obj_t *center_img = lv_img_create(s_clock2_screen);
-  lv_img_set_src(center_img, "S:/littlefs/clock_2/center.png");
-  lv_obj_center(center_img);
+  // 2. Main Time Display (HH : MM)
+  lv_obj_t *time_cont = lv_obj_create(s_clock2_screen);
+  lv_obj_set_size(time_cont, 440, 130);
+  lv_obj_align(time_cont, LV_ALIGN_CENTER, 0, -10);
+  lv_obj_set_flex_flow(time_cont, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(time_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
+                        LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_bg_opa(time_cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(time_cont, 0, 0);
+  lv_obj_set_style_pad_all(time_cont, 0, 0);
+  lv_obj_set_style_pad_column(time_cont, 4, 0);
+  lv_obj_clear_flag(time_cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  s_clock2_hour_label = lv_label_create(time_cont);
+  lv_obj_set_style_text_font(s_clock2_hour_label, &font_ORB_100, 0);
+  lv_obj_set_style_text_color(s_clock2_hour_label, lv_color_white(), 0);
+  lv_label_set_text(s_clock2_hour_label, "12");
+
+  s_clock2_colon1_label = lv_label_create(time_cont);
+  lv_obj_set_style_text_font(s_clock2_colon1_label, &font_ORB_100, 0);
+  lv_obj_set_style_text_color(s_clock2_colon1_label, lv_color_hex(0xFF6D00), 0);
+  lv_label_set_text(s_clock2_colon1_label, ":");
+
+  s_clock2_min_label = lv_label_create(time_cont);
+  lv_obj_set_style_text_font(s_clock2_min_label, &font_ORB_100, 0);
+  lv_obj_set_style_text_color(s_clock2_min_label, lv_color_white(), 0);
+  lv_label_set_text(s_clock2_min_label, "00");
+
+  // 3. Minimal Date Display
+  s_clock2_date_label = lv_label_create(s_clock2_screen);
+  lv_obj_set_style_text_font(s_clock2_date_label, &font_kopub_35, 0);
+  lv_obj_set_style_text_color(s_clock2_date_label, lv_color_hex(0x94A3B8), 0);
+  lv_obj_align(s_clock2_date_label, LV_ALIGN_CENTER, 0, 115);
+  lv_label_set_text(s_clock2_date_label, "2026.09.13 SUN");
 }
 
 static void create_clock3_ui(void) {
@@ -9975,39 +10248,85 @@ static void create_ota_ui(void) {
 static void scan_intro_images(void) {
   s_image_count = 0;
   s_album_scanned = true;
-  ESP_LOGI(TAG, "Album: Scanning for album1~5.jpg in /littlefs/Photo...");
+  ESP_LOGI(TAG, "Album: Scanning for album images (.jpg, .png, .gif) in /littlefs/photo...");
 
-  for (int i = 1; i <= 5; i++) {
-    const char *base_paths[] = {"/littlefs/Photo", "/littlefs/photo",
-                                "/littlefs/flash_data/Photo",
-                                "/littlefs/flash_data/photo"};
+  const char *base_paths[] = {"/littlefs/photo", "/littlefs/Photo",
+                              "/littlefs/flash_data/photo",
+                              "/littlefs/flash_data/Photo"};
+  const char *exts[] = {".jpg", ".png", ".jpeg", ".gif"};
 
+  // 1. Indexed scan for album1~10 with all supported image extensions
+  for (int i = 1; i <= 10; i++) {
     for (int p = 0; p < 4; p++) {
-      char path1[64], path2[64];
-      snprintf(path1, sizeof(path1), "%s/album%d.jpg", base_paths[p], i);
-      snprintf(path2, sizeof(path2), "%s/album_%d.jpg", base_paths[p], i);
+      for (int e = 0; e < 4; e++) {
+        char path1[64], path2[64];
+        snprintf(path1, sizeof(path1), "%s/album%d%s", base_paths[p], i, exts[e]);
+        snprintf(path2, sizeof(path2), "%s/album_%d%s", base_paths[p], i, exts[e]);
 
-      const char *to_check[] = {path1, path2};
-      for (int c = 0; c < 2; c++) {
-        struct stat st;
-        if (stat(to_check[c], &st) == 0 && S_ISREG(st.st_mode)) {
-          if (s_image_count < MAX_IMAGE_FILES) {
-            bool duplicate = false;
-            for (int k = 0; k < s_image_count; k++) {
-              if (strstr(s_image_files[k], to_check[c])) {
-                duplicate = true;
-                break;
+        const char *to_check[] = {path1, path2};
+        for (int c = 0; c < 2; c++) {
+          struct stat st;
+          if (stat(to_check[c], &st) == 0 && S_ISREG(st.st_mode)) {
+            if (s_image_count < MAX_IMAGE_FILES) {
+              bool duplicate = false;
+              for (int k = 0; k < s_image_count; k++) {
+                if (strstr(s_image_files[k], to_check[c])) {
+                  duplicate = true;
+                  break;
+                }
               }
-            }
-            if (!duplicate) {
-              snprintf(s_image_files[s_image_count], sizeof(s_image_files[0]),
-                       "S:%s", to_check[c]);
-              s_image_count++;
-              ESP_LOGI(TAG, "Album: Added (%d) %s", s_image_count, to_check[c]);
+              if (!duplicate) {
+                snprintf(s_image_files[s_image_count], sizeof(s_image_files[0]),
+                         "S:%s", to_check[c]);
+                s_image_count++;
+                ESP_LOGI(TAG, "Album: Added (%d) %s", s_image_count, to_check[c]);
+              }
             }
           }
         }
       }
+    }
+  }
+
+  // 2. Directory scan to find any additional .png, .jpg, .gif files
+  for (int p = 0; p < 4; p++) {
+    DIR *dir = opendir(base_paths[p]);
+    if (dir) {
+      struct dirent *entry;
+      while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+          continue;
+        if (strcasecmp(entry->d_name, "guide.jpg") == 0 ||
+            strcasecmp(entry->d_name, "guide.png") == 0)
+          continue;
+
+        const char *ext = strrchr(entry->d_name, '.');
+        if (ext && (strcasecmp(ext, ".jpg") == 0 || strcasecmp(ext, ".png") == 0 ||
+                    strcasecmp(ext, ".jpeg") == 0 || strcasecmp(ext, ".gif") == 0)) {
+          char full_path[128];
+          snprintf(full_path, sizeof(full_path), "%s/%s", base_paths[p], entry->d_name);
+          struct stat st;
+          if (stat(full_path, &st) == 0 && S_ISREG(st.st_mode)) {
+            if (s_image_count < MAX_IMAGE_FILES) {
+              bool duplicate = false;
+              for (int k = 0; k < s_image_count; k++) {
+                if (strstr(s_image_files[k], full_path)) {
+                  duplicate = true;
+                  break;
+                }
+              }
+              if (!duplicate) {
+                snprintf(s_image_files[s_image_count], sizeof(s_image_files[0]),
+                         "S:%s", full_path);
+                s_image_count++;
+                ESP_LOGI(TAG, "Album: Directory scanned & added (%d) %s",
+                         s_image_count, full_path);
+              }
+            }
+          }
+        }
+      }
+      closedir(dir);
     }
   }
 
@@ -10321,8 +10640,12 @@ static esp_err_t init_touch(void) {
 static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
   static int start_x = -1;
   static int start_y = -1;
-  static bool swiped = false;
+  static int last_x = -1;
+  static int last_y = -1;
   static int release_count = 0;
+  static bool s_outer_rotating = false;
+  static double s_last_outer_angle = 0.0;
+  static double s_accum_cw_angle = 0.0;
 
   // Read buffer size: points * 5 + 5 overhead (safe size 20)
   uint8_t read_buf[20] = {0};
@@ -10353,137 +10676,53 @@ static void touch_read_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
       uint16_t x = ((read_buf[1] << 4) | (read_buf[3] >> 4));
       uint16_t y = ((read_buf[2] << 4) | (read_buf[3] & 0x0F));
       
+      if (start_x == -1) {
+        start_x = x;
+        start_y = y;
+        s_outer_rotating = false;
+        s_accum_cw_angle = 0.0;
+      }
+      last_x = x;
+      last_y = y;
+
+      // Track outer rim rotation (physical coordinates)
+      double dx_c = (double)x - (LCD_H_RES / 2.0);
+      double dy_c = (double)y - (LCD_V_RES / 2.0);
+      double dist = sqrt(dx_c * dx_c + dy_c * dy_c);
+
+      if (dist >= 130.0) {
+        double curr_angle = atan2(dy_c, dx_c) * 180.0 / M_PI;
+        if (!s_outer_rotating) {
+          s_outer_rotating = true;
+          s_last_outer_angle = curr_angle;
+          s_accum_cw_angle = 0.0;
+        } else {
+          double delta = curr_angle - s_last_outer_angle;
+          while (delta > 180.0) delta -= 360.0;
+          while (delta < -180.0) delta += 360.0;
+
+          if (delta > 0.0) {
+            s_accum_cw_angle += delta;
+          } else if (delta < -5.0) {
+            s_accum_cw_angle += delta;
+            if (s_accum_cw_angle < 0.0) s_accum_cw_angle = 0.0;
+          }
+          s_last_outer_angle = curr_angle;
+        }
+      } else {
+        s_outer_rotating = false;
+      }
+
+      // Map touch point for LVGL input based on display flip state (both modes are horizontally mirrored)
+      uint16_t lv_x = (x < LCD_H_RES) ? (LCD_H_RES - 1 - x) : x;
+      uint16_t lv_y = y;
+      if (s_display_flipped) {
+        if (lv_y < LCD_V_RES) lv_y = (LCD_V_RES - 1 - lv_y);
+      }
+
       data->state = LV_INDEV_STATE_PR;
-      data->point.x = x;
-      data->point.y = y;
-
-      int dx = 0;
-      int dy = 0;
-      bool do_swipe_check = false;
-
-      uint8_t gesture = 0; // Force software swipe tracking
-
-      // Hardware gesture detected (fast swipe)
-      if (gesture == 0x01) { dy = -150; do_swipe_check = true; swiped = false; } // Up
-      else if (gesture == 0x02) { dy = 150; do_swipe_check = true; swiped = false; } // Down
-      else if (gesture == 0x03) { dx = -150; do_swipe_check = true; swiped = false; } // Left
-      else if (gesture == 0x04) { dx = 150; do_swipe_check = true; swiped = false; } // Right
-      else {
-        // gesture == 0x05 (Click) or others: fallback to coordinate-based drag tracking
-        if (start_x == -1) {
-          start_x = x;
-          start_y = y;
-          swiped = false;
-          // ESP_LOGI("TOUCH", "[PRESS] Start coordinate saved: (%d, %d)", start_x, start_y);
-        } else if (!swiped) {
-          dx = x - start_x;
-          dy = y - start_y;
-          do_swipe_check = true;
-        }
-      }
-
-      if (do_swipe_check && !swiped) {
-        // Horizontal Swipe (Mode Change) detection
-        if (abs(dx) > abs(dy) && abs(dx) > 15) {
-          ESP_LOGI("TOUCH", "========== SWIPE TRIGGERED ==========");
-          ESP_LOGI("TOUCH", "Type: Software Drag");
-          ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d)", start_x, start_y, x, y);
-          ESP_LOGI("TOUCH", "Distance: dx=%d, dy=%d", dx, dy);
-          ESP_LOGI("TOUCH", "=====================================");
-
-          // [User Request] Ignore ALL touch inputs in Virtual Drive mode
-          if (s_virt_drive_active) {
-            ESP_LOGI("TOUCH", "Horizontal touch ignored in Virtual Drive mode");
-            swiped = true;
-          } else {
-            ESP_LOGI("TOUCH", "HORIZONTAL SWIPE: dx=%d dy=%d", dx, dy);
-            // OTA 모드에서는 가로 스와이프 무시 (실수 방지)
-            if (s_current_mode == DISPLAY_MODE_OTA) {
-              swiped = true; // 다산, 메세지만 더이상 발생 안 함
-            } else {
-              int next_mode;
-              if (dx > 0) { // Right to Left (Next)
-                switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_CLOCK; break;
-                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_ALBUM; break;
-                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_SETTING; break;
-                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_GUIDE; break;
-                default: next_mode = DISPLAY_MODE_GUIDE; break;
-                }
-              } else { // Left to Right (Prev)
-                switch (s_current_mode) {
-                case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_SETTING; break;
-                case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_ALBUM; break;
-                case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_CLOCK; break;
-                case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_GUIDE; break;
-                default: next_mode = DISPLAY_MODE_GUIDE; break;
-                }
-              }
-
-              if (next_mode == DISPLAY_MODE_ALBUM && s_current_mode != DISPLAY_MODE_ALBUM) {
-                reset_album_to_default_image();
-              }
-              s_is_manual_mode_switch = true;
-              switch_display_mode(next_mode);
-              s_is_manual_mode_switch = false;
-              swiped = true;
-            }
-          }
-        }
-        // Vertical Swipe
-        else if (abs(dy) > abs(dx) && abs(dy) > 30) {
-          if (s_virt_drive_active) {
-            ESP_LOGI("TOUCH", "Vertical swipe in Virtual Drive -> Toggle sub-mode");
-            if (s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
-              s_guide_sub_mode = GUIDE_SUB_NAVI;
-            } else {
-              s_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
-            }
-            s_is_manual_mode_switch = true;
-            switch_display_mode(DISPLAY_MODE_GUIDE);
-            s_is_manual_mode_switch = false;
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_GUIDE) {
-            ESP_LOGI("TOUCH", "Vertical swipe disabled in GUIDE mode");
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_ALBUM) {
-            if (dy < 0) load_image_from_sd(1);
-            else load_image_from_sd(-1);
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
-            s_clock_option = (s_clock_option + 1) % 3;
-            ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d", s_clock_option);
-            s_is_manual_mode_switch = true;
-            switch_display_mode(DISPLAY_MODE_CLOCK);
-            s_is_manual_mode_switch = false;
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_BOOT) {
-            uint32_t now = xTaskGetTickCount();
-            if (s_secret_swipe_count == 0 || (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
-              s_secret_swipe_count = 1;
-              s_secret_swipe_start_tick = now;
-              ESP_LOGI("TOUCH", "Secret Trigger: Swipe 1/5 detected (10s timer started)");
-            } else {
-              s_secret_swipe_count++;
-              ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected", s_secret_swipe_count);
-              if (s_secret_swipe_count >= 5) {
-                ESP_LOGW("TOUCH", "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
-                toggle_virtual_drive(true);
-                s_secret_swipe_count = 0;
-              }
-            }
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_SETTING) {
-            setting_page_cb(NULL);
-            swiped = true;
-          } else if (s_current_mode == DISPLAY_MODE_OTA) {
-            s_is_manual_mode_switch = true;
-            switch_display_mode(DISPLAY_MODE_SETTING);
-            s_is_manual_mode_switch = false;
-            swiped = true;
-          }
-        }
-      }
+      data->point.x = lv_x;
+      data->point.y = lv_y;
       return;
     }
   }
@@ -10493,17 +10732,124 @@ handle_release:
   release_count++;
   if (release_count >= 8) { // 8 frames threshold to release (approx 100-150ms buffer)
     data->state = LV_INDEV_STATE_REL;
-    start_x = -1;
-    start_y = -1;
-    swiped = false;
-  } else {
-    // Retain previous state and coordinates to prevent swipe breakage
+
     if (start_x != -1) {
+      int dx = last_x - start_x;
+      int dy = last_y - start_y;
+
+      ESP_LOGI("TOUCH", "=== GESTURE EVALUATED ON RELEASE ===");
+      ESP_LOGI("TOUCH", "Start: (%d, %d) -> End: (%d, %d), dx=%d, dy=%d, Outer Angle=%.1f deg",
+               start_x, start_y, last_x, last_y, dx, dy, s_accum_cw_angle);
+
+      // 1. Priority 1: Outer Rim CW 360 Rotation (HUD Flip Mode Toggle)
+      if (s_accum_cw_angle >= 330.0) {
+        s_display_flipped = !s_display_flipped;
+        save_nvs_settings();
+        apply_display_flip(s_display_flipped);
+
+        ESP_LOGW("TOUCH", "==================================================");
+        ESP_LOGW("TOUCH", "OUTER CW ROTATION DETECTED ON RELEASE! TOGGLED DISPLAY FLIP: %s",
+                 s_display_flipped ? "NORMAL (FLIPPED)" : "HUD MODE");
+        ESP_LOGW("TOUCH", "==================================================");
+      }
+      // 2. Priority 2: Horizontal Swipe (Mode Change)
+      else if (abs(dx) > abs(dy) && abs(dx) > 35) {
+        s_auto_switched_from_idle = false;
+        s_low_speed_start_tick = 0;
+        if (s_virt_drive_active) {
+          ESP_LOGI("TOUCH", "Horizontal touch ignored in Virtual Drive mode");
+        } else if (s_current_mode == DISPLAY_MODE_OTA) {
+          ESP_LOGI("TOUCH", "Horizontal touch ignored in OTA mode");
+        } else {
+          int next_mode;
+          if (dx > 0) { // Right to Left (Next)
+            switch (s_current_mode) {
+            case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_CLOCK; break;
+            case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_ALBUM; break;
+            case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_SETTING; break;
+            case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_GUIDE; break;
+            default: next_mode = DISPLAY_MODE_GUIDE; break;
+            }
+          } else { // Left to Right (Prev)
+            switch (s_current_mode) {
+            case DISPLAY_MODE_GUIDE: next_mode = DISPLAY_MODE_SETTING; break;
+            case DISPLAY_MODE_SETTING: next_mode = DISPLAY_MODE_ALBUM; break;
+            case DISPLAY_MODE_ALBUM: next_mode = DISPLAY_MODE_CLOCK; break;
+            case DISPLAY_MODE_CLOCK: next_mode = DISPLAY_MODE_GUIDE; break;
+            default: next_mode = DISPLAY_MODE_GUIDE; break;
+            }
+          }
+
+          if (next_mode == DISPLAY_MODE_ALBUM && s_current_mode != DISPLAY_MODE_ALBUM) {
+            reset_album_to_default_image();
+          }
+          s_is_manual_mode_switch = true;
+          switch_display_mode(next_mode);
+          s_is_manual_mode_switch = false;
+        }
+      }
+      // 3. Priority 3: Vertical Swipe
+      else if (abs(dy) > abs(dx) && abs(dy) > 35) {
+        if (s_virt_drive_active) {
+          ESP_LOGI("TOUCH", "Vertical swipe in Virtual Drive -> Toggle sub-mode");
+          if (s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
+            s_guide_sub_mode = GUIDE_SUB_NAVI;
+          } else {
+            s_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
+          }
+          s_is_manual_mode_switch = true;
+          switch_display_mode(DISPLAY_MODE_GUIDE);
+          s_is_manual_mode_switch = false;
+        } else if (s_current_mode == DISPLAY_MODE_GUIDE) {
+          ESP_LOGI("TOUCH", "Vertical swipe disabled in GUIDE mode");
+        } else if (s_current_mode == DISPLAY_MODE_ALBUM) {
+          if (dy < 0) load_image_from_sd(1);
+          else load_image_from_sd(-1);
+        } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
+          s_clock_option = (s_clock_option + 1) % 3;
+          ESP_LOGI("TOUCH", "Clock option toggled via vertical swipe: %d", s_clock_option);
+          s_is_manual_mode_switch = true;
+          switch_display_mode(DISPLAY_MODE_CLOCK);
+          s_is_manual_mode_switch = false;
+        } else if (s_current_mode == DISPLAY_MODE_BOOT) {
+          uint32_t now = xTaskGetTickCount();
+          if (s_secret_swipe_count == 0 || (now - s_secret_swipe_start_tick) > pdMS_TO_TICKS(10000)) {
+            s_secret_swipe_count = 1;
+            s_secret_swipe_start_tick = now;
+            ESP_LOGI("TOUCH", "Secret Trigger: Swipe 1/5 detected (10s timer started)");
+          } else {
+            s_secret_swipe_count++;
+            ESP_LOGI("TOUCH", "Secret Trigger: Swipe %d/5 detected", s_secret_swipe_count);
+            if (s_secret_swipe_count >= 5) {
+              ESP_LOGW("TOUCH", "SECRET TRIGGER ACTIVATED! Entering Virtual Drive...");
+              toggle_virtual_drive(true);
+              s_secret_swipe_count = 0;
+            }
+          }
+        } else if (s_current_mode == DISPLAY_MODE_SETTING) {
+          setting_page_cb(NULL);
+        } else if (s_current_mode == DISPLAY_MODE_OTA) {
+          s_is_manual_mode_switch = true;
+          switch_display_mode(DISPLAY_MODE_SETTING);
+          s_is_manual_mode_switch = false;
+        }
+      }
+
+      start_x = -1;
+      start_y = -1;
+      s_outer_rotating = false;
+      s_accum_cw_angle = 0.0;
+    }
+  } else {
+    if (start_x != -1) {
+      uint16_t lv_x = (last_x < LCD_H_RES) ? (LCD_H_RES - 1 - last_x) : last_x;
+      uint16_t lv_y = last_y;
+      if (s_display_flipped) {
+        if (lv_y < LCD_V_RES) lv_y = (LCD_V_RES - 1 - lv_y);
+      }
       data->state = LV_INDEV_STATE_PR;
-      data->point.x = start_x;
-      data->point.y = start_y;
-    } else {
-      data->state = LV_INDEV_STATE_REL;
+      data->point.x = lv_x;
+      data->point.y = lv_y;
     }
   }
 }
@@ -10759,48 +11105,8 @@ void app_main(void) {
                   &s_lvgl_task_handle);
 
       if (s_intro_image) {
-        const char *intro_gif_paths[] = {"/littlefs/intro.gif",
-                                         "/littlefs/flash_data/intro.gif"};
-        const char *intro_lv_paths[] = {"S:/littlefs/intro.gif",
-                                        "S:/littlefs/flash_data/intro.gif"};
-        for (int i = 0; i < 2; i++) {
-          struct stat st;
-          if (stat(intro_gif_paths[i], &st) == 0) {
-            ESP_LOGI(TAG,
-                     "System Boot: Intro GIF found at %s. Playing early...",
-                     intro_gif_paths[i]);
-            LVGL_LOCK();
-            if (s_intro_image)
-              lv_obj_del(s_intro_image);
-#ifndef LV_USE_GIF
-#define LV_USE_GIF 1
-#endif
-#if LV_USE_GIF
-            s_intro_image = lv_gif_create(s_boot_screen);
-            if (s_intro_image) {
-              ESP_LOGI(TAG, "[DISPLAY] Step 4: Loading Intro GIF and switching "
-                            "to BOOT screen");
-              lv_gif_set_src(s_intro_image, intro_lv_paths[i]);
-              lv_obj_clear_flag(s_intro_image, LV_OBJ_FLAG_HIDDEN);
-              lv_obj_center(s_intro_image);
-              lv_obj_move_foreground(s_intro_image);
-              lv_gif_set_loop_count(s_intro_image, 1);
-              lv_scr_load(
-                  s_boot_screen); // Ensure boot screen is active for intro
-              LVGL_UNLOCK();
-              // [User Request] 설정 메뉴의 밝기 값을 보존하기 위해 하드웨어
-              // 밝기만 직접 올립니다.
-              apply_hw_brightness(5); // Turn on backlight for intro only
-              ESP_LOGI(TAG, "[DISPLAY] Backlight ON (Level 5)");
-              intro_start_time = (uint32_t)(esp_timer_get_time() / 1000);
-              intro_playing = true;
-            } else {
-              LVGL_UNLOCK();
-            }
-#endif
-            break;
-          }
-        }
+        intro_start_time = (uint32_t)(esp_timer_get_time() / 1000);
+        intro_playing = true;
       }
     }
   }
@@ -10933,7 +11239,7 @@ void app_main(void) {
       vTaskDelay(pdMS_TO_TICKS(check_ms));
     }
   } else {
-    ESP_LOGW(TAG, "System Boot: Intro GIF not found or not played.");
+    ESP_LOGI(TAG, "System Boot: No early intro image loaded.");
   }
 
   // [User Request] 인트로 재생 완료 후 NVS 설정값으로 밝기 복구
