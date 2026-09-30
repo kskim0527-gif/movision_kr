@@ -55,7 +55,9 @@ static lv_font_t *s_font_kopub_25 = NULL;
 
 static lv_font_t *s_font_kopub_35 = NULL;
 static lv_font_t *s_font_kopub_40 = NULL;
+static lv_font_t *s_font_orb_60 = NULL;
 static lv_font_t *s_font_orb_100 = NULL;
+static lv_font_t *s_font_orb_130 = NULL;
 static lv_font_t *s_font_orb_155 = NULL;
 static lv_font_t *s_font_kopub_100 = NULL;
 // static lv_font_t *s_font_gman_188 = NULL;
@@ -68,7 +70,9 @@ static lv_font_t *s_font_addr_30 = NULL; // 도로명 표시용 폰트 (font_add
 
 #define font_kopub_35 (*SAFE_FONT(s_font_kopub_35))
 #define font_kopub_40 (*SAFE_FONT(s_font_kopub_40))
+#define font_ORB_60 (*SAFE_FONT(s_font_orb_60))
 #define font_ORB_100 (*SAFE_FONT(s_font_orb_100))
+#define font_ORB_130 (*SAFE_FONT(s_font_orb_130))
 #define font_ORB_155 (*SAFE_FONT(s_font_orb_155))
 #define font_kopub_100 (*SAFE_FONT(s_font_kopub_100))
 #define font_gman_188 (*SAFE_FONT(s_font_gman_188))
@@ -675,6 +679,10 @@ static lv_obj_t *s_speedometer_inner_circle = NULL;
 static lv_obj_t *s_speedometer_center_img = NULL;
 static lv_point_t s_speedometer_needle_points[5];
 
+static lv_obj_t *s_speedometer_ticks_obj = NULL; // 눈금 바 형태의 속도 게이지
+static int s_speedometer_current_speed_val = 0;
+static lv_obj_t *s_speedometer_speed_arc = NULL;
+static lv_obj_t *s_speedometer_limit_dot = NULL; // 빨간색 제한속도 마커 점
 static lv_obj_t *s_speedometer_speed_label = NULL;
 static lv_obj_t *s_speedometer_unit_label = NULL;
 static lv_obj_t *s_speedometer_safety_image = NULL;
@@ -688,6 +696,140 @@ static lv_obj_t *s_speedometer_avr_speed_value_label =
 static lv_obj_t *s_speedometer_avr_speed_unit_label =
     NULL; // Speedometer Average Speed Unit
 static uint8_t s_speedometer_safety_tt_val = 0;
+static lv_timer_t *s_speedometer_overspeed_timer = NULL;
+static bool s_speedometer_overspeed_flash_state = false;
+
+// 속도계 모드 '틈새시계' 오브젝트 (세이프티 안내 없을 때 표시되는 디지탈 시계)
+static lv_obj_t *s_speedometer_clock_cont = NULL;
+static lv_obj_t *s_speedometer_clock_date_label = NULL;
+static lv_obj_t *s_speedometer_clock_hour_label = NULL;
+static lv_obj_t *s_speedometer_clock_colon_label = NULL;
+static lv_obj_t *s_speedometer_clock_min_label = NULL;
+
+// 눈금 바 형태의 속도 게이지 그린 커스텀 렌더링 콜백
+static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
+  lv_obj_t * obj = lv_event_get_target(e);
+  lv_draw_ctx_t * draw_ctx = lv_event_get_draw_ctx(e);
+
+  lv_area_t coords;
+  lv_obj_get_coords(obj, &coords);
+
+  lv_point_t center;
+  center.x = coords.x1 + lv_area_get_width(&coords) / 2;
+  center.y = coords.y1 + lv_area_get_height(&coords) / 2;
+
+  // 0~220 km/h 범위 (총 45개 눈금 바, 5.0km/h 단위, 156도 ~ 24도 228도 회전)
+  const int NUM_TICKS = 45;
+  const float START_ANGLE = 156.0f;
+  const float TOTAL_ANGLE = 228.0f;
+  const float R_IN = 206.0f;
+  const float R_OUT = 233.0f;
+
+  int current_speed = s_speedometer_current_speed_val;
+  if (current_speed > 220) current_speed = 220;
+  if (current_speed < 0) current_speed = 0;
+
+  int max_active_tick = (int)(current_speed * (float)(NUM_TICKS - 1) / 220.0f);
+  if (max_active_tick >= NUM_TICKS) max_active_tick = NUM_TICKS - 1;
+
+  for (int i = 0; i < NUM_TICKS; i++) {
+    float angle_deg = START_ANGLE + (float)i * (TOTAL_ANGLE / (float)(NUM_TICKS - 1));
+    float angle_rad = angle_deg * ((float)M_PI / 180.0f);
+
+    float cos_a = cosf(angle_rad);
+    float sin_a = sinf(angle_rad);
+
+    lv_point_t p1, p2;
+    p1.x = center.x + (lv_coord_t)(R_IN * cos_a);
+    p1.y = center.y + (lv_coord_t)(R_IN * sin_a);
+    p2.x = center.x + (lv_coord_t)(R_OUT * cos_a);
+    p2.y = center.y + (lv_coord_t)(R_OUT * sin_a);
+
+    lv_draw_line_dsc_t line_dsc;
+    lv_draw_line_dsc_init(&line_dsc);
+    line_dsc.width = 10;
+    line_dsc.round_start = 1;
+    line_dsc.round_end = 1;
+
+    if (s_speedometer_overspeed_flash_state) {
+      // [과속 점멸 상태] 45개 눈금 바 전체를 강렬한 빨간색 테마로 표시
+      if (i <= max_active_tick) {
+        line_dsc.color = lv_color_hex(0xFF0033); // 도달 구간: 선명한 빨간색
+        line_dsc.opa = LV_OPA_COVER;
+      } else {
+        line_dsc.color = lv_color_hex(0x3B1014); // 미도달 구간: 어두운 붉은색
+        line_dsc.opa = LV_OPA_COVER;
+      }
+    } else {
+      // [평상시 상태] 정상 녹색/연두색 테마
+      if (i == max_active_tick) {
+        line_dsc.color = lv_color_hex(0xFF3344); // 가장 위의 블럭(선두 지침): 선명한 빨간색
+        line_dsc.opa = LV_OPA_COVER;
+      } else if (i < max_active_tick) {
+        line_dsc.color = lv_color_hex(0x22C55E); // 선명한 연두/녹색 (도달 구간)
+        line_dsc.opa = LV_OPA_COVER;
+      } else {
+        line_dsc.color = lv_color_hex(0x142B1F); // 미도달 구간 어두운 녹색
+        line_dsc.opa = LV_OPA_COVER;
+      }
+    }
+
+    lv_draw_line(draw_ctx, &line_dsc, &p1, &p2);
+  }
+}
+
+static void speedometer_overspeed_timer_cb(lv_timer_t *timer) {
+  (void)timer;
+  s_speedometer_overspeed_flash_state = !s_speedometer_overspeed_flash_state;
+
+  // 1. 속도 숫자 색상 토글 (빨간색 <-> 흰색)
+  if (s_speedometer_speed_label != NULL) {
+    if (s_speedometer_overspeed_flash_state) {
+      lv_obj_set_style_text_color(s_speedometer_speed_label, lv_color_hex(0xFF0033), 0);
+    } else {
+      lv_obj_set_style_text_color(s_speedometer_speed_label, lv_color_white(), 0);
+    }
+    lv_obj_invalidate(s_speedometer_speed_label);
+  }
+
+  // 2. 게이지 눈금 바 전체 다시 그리기 (빨간색 <-> 녹색)
+  if (s_speedometer_ticks_obj != NULL) {
+    lv_obj_invalidate(s_speedometer_ticks_obj);
+  }
+}
+
+static void stop_speedometer_overspeed_alert(void) {
+  if (s_speedometer_overspeed_timer != NULL) {
+    lv_timer_del(s_speedometer_overspeed_timer);
+    s_speedometer_overspeed_timer = NULL;
+  }
+  if (s_speedometer_overspeed_flash_state) {
+    s_speedometer_overspeed_flash_state = false;
+    if (s_speedometer_ticks_obj != NULL) {
+      lv_obj_invalidate(s_speedometer_ticks_obj);
+    }
+  }
+  if (s_speedometer_speed_label != NULL) {
+    lv_obj_set_style_text_color(s_speedometer_speed_label, lv_color_white(), 0);
+    lv_obj_invalidate(s_speedometer_speed_label);
+  }
+}
+
+static void start_speedometer_overspeed_alert(void) {
+  if (s_speedometer_overspeed_timer == NULL) {
+    s_speedometer_overspeed_flash_state = true;
+    if (s_speedometer_speed_label != NULL) {
+      lv_obj_set_style_text_color(s_speedometer_speed_label, lv_color_hex(0xFF0033), 0);
+      lv_obj_invalidate(s_speedometer_speed_label);
+    }
+    if (s_speedometer_ticks_obj != NULL) {
+      lv_obj_invalidate(s_speedometer_ticks_obj);
+    }
+    s_speedometer_overspeed_timer =
+        lv_timer_create(speedometer_overspeed_timer_cb, 1000, NULL);
+  }
+}
+
 static lv_obj_t *s_speedometer_road_name_label =
     NULL; // Speedometer Road Name Label
 static lv_obj_t *s_speedometer_road_name_sub_label =
@@ -990,6 +1132,7 @@ static void avr_speed_mark(uint8_t start, uint8_t id, uint8_t commend,
                            uint8_t data_length, uint8_t data1, uint8_t data2);
 static void update_speed_label(uint8_t data1, uint8_t speed);
 static void create_speedometer_ui(void);
+static void update_speedometer_clock(void); // 속도계 모드 '틈새시계' 갱신
 // SD card drive callbacks for LVGL
 static void *lv_fs_open_sd(lv_fs_drv_t *drv, const char *path,
                            lv_fs_mode_t mode) {
@@ -1258,12 +1401,13 @@ static void process_app_command(const uint8_t *data, size_t len) {
 
   // 5. Destination Info
   if (commend == 0x0A && data_length == 0x05 && len >= 10) {
-    if (s_current_mode == DISPLAY_MODE_BOOT ||
-        (s_current_mode == DISPLAY_MODE_GUIDE &&
-         s_guide_sub_mode == GUIDE_SUB_STANDBY) ||
-        (s_current_mode == DISPLAY_MODE_GUIDE &&
-         s_guide_sub_mode ==
-             GUIDE_SUB_SPEEDOMETER)) { // 속도계에서 목적지 수신 시 내비로 전환
+    if (!s_virt_drive_active &&
+        (s_current_mode == DISPLAY_MODE_BOOT ||
+         (s_current_mode == DISPLAY_MODE_GUIDE &&
+          s_guide_sub_mode == GUIDE_SUB_STANDBY) ||
+         (s_current_mode == DISPLAY_MODE_GUIDE &&
+          s_guide_sub_mode ==
+             GUIDE_SUB_SPEEDOMETER))) { // 속도계에서 목적지 수신 시 내비로 전환
       ESP_LOGI(TAG, "Destination info received. Auto-switching to NAVI.");
       s_guide_sub_mode = GUIDE_SUB_NAVI;
       switch_display_mode(DISPLAY_MODE_GUIDE);
@@ -1369,10 +1513,11 @@ static void process_app_command(const uint8_t *data, size_t len) {
     uint8_t mode_val = data[4];
     // Protocol 1.10: 0x00: Safety Driving Mode, 0x01: Destination Mode
 
-    // [User Request] Block auto-switch in specialized modes (CLOCK, ALBUM)
+    // [User Request] Block auto-switch in specialized modes (CLOCK, ALBUM) or Virtual Drive
     if (s_current_mode == DISPLAY_MODE_CLOCK ||
         s_current_mode == DISPLAY_MODE_ALBUM ||
-        s_current_mode == DISPLAY_MODE_SETTING) {
+        s_current_mode == DISPLAY_MODE_SETTING ||
+        s_virt_drive_active) {
       ESP_LOGI(TAG, "0x0C command (Dest Mode) ignored in specialty mode: %d",
                s_current_mode);
       return;
@@ -1389,8 +1534,9 @@ static void process_app_command(const uint8_t *data, size_t len) {
 
   // 11. Destination Arrived (목적지 도착) -> 속도계 화면으로 자동 전환
   if (commend == 0x0D && data_length == 0x01 && len >= 6) {
-    if (s_current_mode == DISPLAY_MODE_BOOT ||
-        s_current_mode == DISPLAY_MODE_GUIDE) {
+    if (!s_virt_drive_active &&
+        (s_current_mode == DISPLAY_MODE_BOOT ||
+         s_current_mode == DISPLAY_MODE_GUIDE)) {
       ESP_LOGI(TAG, "Destination arrived -> Switching to SPEEDOMETER");
       s_guide_sub_mode = GUIDE_SUB_SPEEDOMETER;
       switch_display_mode(DISPLAY_MODE_GUIDE);
@@ -1429,16 +1575,38 @@ static int hex_char_to_int(char c) {
 // Virtual Drive Task (Replays data from log file)
 static void virtual_drive_task(void *arg) {
   FILE *f = NULL;
+  guide_sub_mode_t current_open_sub_mode = (guide_sub_mode_t)-1;
   char line[256];
   uint8_t buffer[128];
   ESP_LOGI("VIRT", "Virtual Drive Task Started (Log Replay Mode)");
 
   while (1) {
     if (s_virt_drive_active) {
+      // Sub-mode에 따라 로그 소스 파일 선택:
+      // 내비 모드 (GUIDE_SUB_NAVI) -> merged_log_drv.txt
+      // 속도계 모드 (GUIDE_SUB_SPEEDOMETER) 및 기본 -> merged_log.txt
+      guide_sub_mode_t target_sub_mode = s_guide_sub_mode;
+
+      if (f != NULL && current_open_sub_mode != target_sub_mode) {
+        ESP_LOGI("VIRT", "Sub-mode switched (%d -> %d), changing log source...",
+                 current_open_sub_mode, target_sub_mode);
+        fclose(f);
+        f = NULL;
+      }
+
       if (f == NULL) {
-        const char *log_search_paths[] = {
-            "/littlefs/flash_data/merged_log.txt", "/littlefs/merged_log.txt",
-            "/littlefs/Flash_Data/merged_log.txt", "/sdcard/merged_log.txt"};
+        const char *log_search_paths[4];
+        if (target_sub_mode == GUIDE_SUB_NAVI) {
+          log_search_paths[0] = "/littlefs/flash_data/merged_log_drv.txt";
+          log_search_paths[1] = "/littlefs/merged_log_drv.txt";
+          log_search_paths[2] = "/littlefs/Flash_Data/merged_log_drv.txt";
+          log_search_paths[3] = "/sdcard/merged_log_drv.txt";
+        } else {
+          log_search_paths[0] = "/littlefs/flash_data/merged_log.txt";
+          log_search_paths[1] = "/littlefs/merged_log.txt";
+          log_search_paths[2] = "/littlefs/Flash_Data/merged_log.txt";
+          log_search_paths[3] = "/sdcard/merged_log.txt";
+        }
 
         for (int i = 0; i < 4; i++) {
           // Check LittleFS mount status before opening
@@ -1448,14 +1616,17 @@ static void virtual_drive_task(void *arg) {
 
           f = fopen(log_search_paths[i], "r");
           if (f) {
-            ESP_LOGI("VIRT", "Opened Log: %s", log_search_paths[i]);
+            ESP_LOGI("VIRT", "Opened Log (%s): %s",
+                     (target_sub_mode == GUIDE_SUB_NAVI) ? "NAVI" : "SPEEDOMETER",
+                     log_search_paths[i]);
+            current_open_sub_mode = target_sub_mode;
             break;
           }
         }
 
         if (f == NULL) {
-          ESP_LOGW("VIRT", "Log file not found. Disabling Virtual Drive.");
-          s_virt_drive_active = false;
+          ESP_LOGW("VIRT", "Log file not found for sub-mode %s. Retrying...",
+                   (target_sub_mode == GUIDE_SUB_NAVI) ? "NAVI" : "SPEEDOMETER");
           vTaskDelay(pdMS_TO_TICKS(1000));
           continue;
         }
@@ -1484,11 +1655,12 @@ static void virtual_drive_task(void *arg) {
       } else {
         fseek(f, 0, SEEK_SET);
       }
-      vTaskDelay(pdMS_TO_TICKS(100));
+      vTaskDelay(pdMS_TO_TICKS(200));
     } else {
       if (f != NULL) {
         fclose(f);
         f = NULL;
+        current_open_sub_mode = (guide_sub_mode_t)-1;
         ESP_LOGI("VIRT", "Log file closed");
       }
       vTaskDelay(pdMS_TO_TICKS(500));
@@ -1518,7 +1690,11 @@ void toggle_virtual_drive(bool enable) {
       lv_obj_set_style_border_width(s_circle_ring, 5, 0);
       lv_obj_set_size(s_circle_ring, 463, 463);
       lv_obj_center(s_circle_ring);
-      lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+      if (s_guide_sub_mode == GUIDE_SUB_NAVI) {
+        lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+      } else {
+        lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+      }
       lv_obj_invalidate(s_circle_ring);
     }
     LVGL_UNLOCK();
@@ -2634,8 +2810,13 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
                  s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
         if (s_speedometer_safety_image != NULL) {
           lv_img_set_src(s_speedometer_safety_image, img_path);
+          lv_img_set_zoom(s_speedometer_safety_image, 333); // 130% (30% 확대)
+          lv_obj_align(s_speedometer_safety_image, LV_ALIGN_CENTER, 0, 0);
           lv_obj_clear_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN);
           lv_obj_move_foreground(s_speedometer_safety_image);
+        }
+        if (s_speedometer_clock_cont != NULL) {
+          lv_obj_add_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN);
         }
 
         if (s_speedometer_safety_arc != NULL) {
@@ -2653,10 +2834,6 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
 
           if (limit_speed > 0) {
             int start_angle = (int)((limit_speed / 220.0) * 228.0);
-            /* ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
-                     start_angle, limit_speed); */
-
-            // 시인성 확보를 위해 두께와 색상을 강제 재설정 (주황색/10px로 복구)
             lv_obj_set_style_arc_width(s_speedometer_safety_arc, 10,
                                        LV_PART_INDICATOR);
             lv_obj_set_style_arc_color(s_speedometer_safety_arc,
@@ -2664,14 +2841,23 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
                                        LV_PART_INDICATOR);
 
             lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-            lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_move_foreground(s_speedometer_safety_arc);
+            lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
             lv_obj_invalidate(s_speedometer_safety_arc);
+
+            if (s_speedometer_limit_dot != NULL) {
+              double limit_angle = 156.0 + (limit_speed / 220.0) * 228.0;
+              double limit_rad = limit_angle * M_PI / 180.0;
+              int dot_x = (int)(194.0 * cos(limit_rad));
+              int dot_y = (int)(194.0 * sin(limit_rad));
+              lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, dot_x, dot_y);
+              lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
+              lv_obj_move_foreground(s_speedometer_limit_dot);
+            }
           } else {
-            // 제한속도 표기가 없는 경우 180~220km/h 구간 표시
+            // 제한속도 표기가 없는 경우
             int start_angle = (int)((180 / 220.0) * 228.0);
             lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-            lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
             lv_obj_invalidate(s_speedometer_safety_arc);
           }
         }
@@ -2748,7 +2934,12 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
       } else if (s_current_mode == DISPLAY_MODE_GUIDE &&
                  s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
         if (s_speedometer_safety_image != NULL) {
+          lv_img_set_zoom(s_speedometer_safety_image, 333); // 130% (30% 확대)
+          lv_obj_align(s_speedometer_safety_image, LV_ALIGN_CENTER, 0, 0);
           lv_obj_clear_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN);
+        }
+        if (s_speedometer_clock_cont != NULL) {
+          lv_obj_add_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN);
         }
 
         if (s_speedometer_safety_arc != NULL) {
@@ -2765,10 +2956,6 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
 
           if (limit_speed > 0) {
             int start_angle = (int)((limit_speed / 220.0) * 228.0);
-            /* ESP_LOGI(TAG, "Setting Safety Arc Start Angle: %d (limit: %d km/h)",
-                     start_angle, limit_speed); */
-
-            // 시인성 확보를 위해 두께와 색상을 강제 재설정 (주황색/10px로 복구)
             lv_obj_set_style_arc_width(s_speedometer_safety_arc, 10,
                                        LV_PART_INDICATOR);
             lv_obj_set_style_arc_color(s_speedometer_safety_arc,
@@ -2776,14 +2963,23 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
                                        LV_PART_INDICATOR);
 
             lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-            lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
-            lv_obj_move_foreground(s_speedometer_safety_arc);
+            lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
             lv_obj_invalidate(s_speedometer_safety_arc);
+
+            if (s_speedometer_limit_dot != NULL) {
+              double limit_angle = 156.0 + (limit_speed / 220.0) * 228.0;
+              double limit_rad = limit_angle * M_PI / 180.0;
+              int dot_x = (int)(194.0 * cos(limit_rad));
+              int dot_y = (int)(194.0 * sin(limit_rad));
+              lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, dot_x, dot_y);
+              lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
+              lv_obj_move_foreground(s_speedometer_limit_dot);
+            }
           } else {
-            // 제한속도 표기가 없는 경우 180~220km/h 구간 표시
+            // 제한속도 표기가 없는 경우
             int start_angle = (int)((180 / 220.0) * 228.0);
             lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-            lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
             lv_obj_invalidate(s_speedometer_safety_arc);
           }
         }
@@ -2805,11 +3001,13 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
     if (s_circle_ring != NULL)
       lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
   } else {
+    bool is_navi_mode = (s_current_mode == DISPLAY_MODE_GUIDE && s_guide_sub_mode == GUIDE_SUB_NAVI);
+
     if (data3 == 1) {
       // 외곽 링 객체가 없으면 생성
       ensure_circle_ring_created();
 
-      if (s_circle_ring != NULL) {
+      if (s_circle_ring != NULL && is_navi_mode) {
         // 빨강링 점멸 시작
         if (s_safety_ring_timer == NULL) {
           /* ESP_LOGI(TAG, "Safety Ring FLASH START: mode=%d, d3=%d",
@@ -2824,12 +3022,11 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
           lv_obj_set_size(s_circle_ring, 461, 461); // Red diameter = 461
           lv_obj_center(s_circle_ring);
           lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
-          lv_obj_move_foreground(s_circle_ring); // 최상위로
+          lv_obj_move_foreground(s_circle_ring); // 최상위
           lv_obj_invalidate(s_circle_ring);
-          lv_refr_now(NULL); // 즉시 갱신 강제
+          lv_refr_now(NULL); // 즉시 갱신
         } else {
           // 이미 동작 중이면 리셋하여 다시 2회 반복 시작
-          /* ESP_LOGI(TAG, "Safety Ring FLASH RESET: mode=%d", s_current_mode); */
           lv_timer_reset(s_safety_ring_timer);
           s_safety_ring_flash_count = 1;
           lv_obj_set_style_border_color(s_circle_ring, lv_color_hex(0xFF0000),
@@ -2838,9 +3035,13 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
           lv_obj_set_size(s_circle_ring, 461, 461);
           lv_obj_center(s_circle_ring);
           lv_obj_move_foreground(s_circle_ring);
+          lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
           lv_obj_invalidate(s_circle_ring);
-          lv_refr_now(NULL); // 즉시 갱신 강제
+          lv_refr_now(NULL); // 즉시 갱신
         }
+      } else if (s_circle_ring != NULL && !is_navi_mode) {
+        lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_invalidate(s_circle_ring);
       }
     } else if (s_circle_ring != NULL) {
       // 즉시 중지 및 이전 GPS 상태 링 표시 (data3 = 0 또는 다른 값)
@@ -2860,14 +3061,11 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
       lv_obj_set_size(s_circle_ring, 463, 463); // GPS diameter = 463
       lv_obj_center(s_circle_ring);
 
-      // GPS 링을 숨기는 모드이거나 연결이 끊겼을 때(단, 가상 모드 제외), 과속
-      // 경고 점멸 중이 아닐 때만 숨김
-      if ((s_current_mode != DISPLAY_MODE_GUIDE ||
-           (!s_connected && !s_virt_drive_active)) &&
-          s_safety_ring_timer == NULL) {
-        lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
-      } else if (s_connected || s_virt_drive_active) {
+      // 내비 모드이고 GPS 연결(또는 가상주행) 상태인 경우에만 표시, 속도계 모드 등은 숨김
+      if (is_navi_mode && (s_connected || s_virt_drive_active)) {
         lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+      } else {
+        lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
       }
       lv_obj_invalidate(s_circle_ring);
     }
@@ -2920,7 +3118,7 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
       }
 
       lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-      lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
       lv_obj_invalidate(s_speedometer_safety_arc);
     }
     s_last_distance_m = 0xFFFFFFFF;
@@ -3015,30 +3213,24 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
       s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
     if (s_speedometer_safety_value_label != NULL) {
       lv_label_set_text(s_speedometer_safety_value_label, value_text);
-
-      // Calculate width for last digit center alignment (using kopub_35 to
-      // match HUD)
-      lv_coord_t v_width = lv_txt_get_width(
-          value_text, strlen(value_text), &font_kopub_35, 0, LV_TEXT_FLAG_NONE);
-      size_t v_len = strlen(value_text);
-      lv_coord_t v_last_char_w = 0;
-      if (v_len > 0) {
-        char last_char_str[2] = {value_text[v_len - 1], '\0'};
-        v_last_char_w = lv_txt_get_width(last_char_str, 1, &font_kopub_35, 0,
-                                         LV_TEXT_FLAG_NONE);
-      }
-
-      // Align: center of last digit at X=110, 아래로 146pt (Y=146) - Safety
-      // 이미지 우측 하단 정렬
-      lv_obj_align(s_speedometer_safety_value_label, LV_ALIGN_CENTER,
-                   110 + (v_last_char_w / 2) - (v_width / 2), 146);
+      lv_obj_set_style_text_font(s_speedometer_safety_value_label, &font_kopub_40, 0); // 40pt 폰트
       lv_obj_set_style_text_color(s_speedometer_safety_value_label,
-                                  lv_color_hex(0x00FF00), 0); // 초록색
+                                  lv_color_hex(0xD9A700), 0); // 어두운 노란색 (Dark Yellow)
 
+      // Calculate total width of [value_text] + space(6) + [unit_text] for perfect center alignment above image
+      lv_coord_t v_w = lv_txt_get_width(value_text, strlen(value_text), &font_kopub_40, 0, LV_TEXT_FLAG_NONE);
+      lv_coord_t u_w = lv_txt_get_width(unit_text, strlen(unit_text), &font_kopub_25, 0, LV_TEXT_FLAG_NONE);
+      lv_coord_t total_w = v_w + 6 + u_w;
+      lv_coord_t start_x = -(total_w / 2);
+
+      lv_obj_align(s_speedometer_safety_value_label, LV_ALIGN_CENTER,
+                   start_x + (v_w / 2), -105);
       lv_obj_clear_flag(s_speedometer_safety_value_label, LV_OBJ_FLAG_HIDDEN);
     }
     if (s_speedometer_safety_unit_label != NULL) {
       lv_label_set_text(s_speedometer_safety_unit_label, unit_text);
+      lv_obj_set_style_text_color(s_speedometer_safety_unit_label,
+                                  lv_color_hex(0xD9A700), 0); // 어두운 노란색 (Dark Yellow)
       lv_obj_align_to(s_speedometer_safety_unit_label,
                       s_speedometer_safety_value_label, LV_ALIGN_OUT_RIGHT_MID,
                       6, 0);
@@ -3265,7 +3457,11 @@ static void update_circle_display(uint8_t start, uint8_t id, uint8_t commend,
     return;
   }
 
-  lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+  if (s_current_mode == DISPLAY_MODE_GUIDE && s_guide_sub_mode == GUIDE_SUB_NAVI) {
+    lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+  } else {
+    lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+  }
   lv_obj_invalidate(s_circle_ring);
 }
 
@@ -3281,8 +3477,8 @@ static void safety_ring_timer_cb(lv_timer_t *timer) {
 
   // 4번째 상태(두 번째 OFF)까지 완료되면 중지
   // 1:Red(시작), 2:Original, 3:Red, 4:Original(끝)
-  if (s_safety_ring_flash_count >= 4) {
-    // 최종적으로 기존 색상 복구
+  if (s_safety_ring_flash_count >= 5) {
+    // 2회 깜빡임(빨강 2회, 원래 색상 2회) 완료 후 타이머 정지 및 원래 상태 복원 (Git HEAD 로직)
     lv_color_t original_color = lv_color_hex(0x00FF00);
     if (s_last_circle_request_valid) {
       if (s_last_circle_request.data1 == 0x00) {
@@ -3294,13 +3490,15 @@ static void safety_ring_timer_cb(lv_timer_t *timer) {
       }
     }
     lv_obj_set_style_border_color(s_circle_ring, original_color, 0);
-    // Restore Original Width - Back to 5pt for all
     lv_obj_set_style_border_width(s_circle_ring, 5, 0); // 5pt로 복구
     lv_obj_set_size(s_circle_ring, 463, 463);           // 463pt로 복구
     lv_obj_center(s_circle_ring);
-    // GPS 링 숨김 모드에서는 타이머 종료 후 링 숨김
-    // (CLOCK/CLOCK2/ALBUM/SETTING/VIRTUAL_DRIVE/OTA)
-    if (s_current_mode != DISPLAY_MODE_GUIDE) {
+
+    // 내비 모드이고 GPS 연결(또는 가상주행) 상태인 경우에만 링 표시 유지, 그 외 모드는 숨김
+    if (s_current_mode == DISPLAY_MODE_GUIDE && s_guide_sub_mode == GUIDE_SUB_NAVI &&
+        (s_connected || s_virt_drive_active)) {
+      lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+    } else {
       lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
     }
     lv_obj_invalidate(s_circle_ring);
@@ -3310,11 +3508,11 @@ static void safety_ring_timer_cb(lv_timer_t *timer) {
     return;
   }
 
-  // 홀수 번째는 빨강, 짝수 번째는 기존 색상
+  // 홀수 번째는 빨간색, 짝수 번째는 원래 색상 (Git HEAD 로직)
   if (s_safety_ring_flash_count % 2 == 1) {
     lv_obj_set_style_border_color(s_circle_ring, lv_color_hex(0xFF0000), 0);
-    lv_obj_set_style_border_width(s_circle_ring, 10, 0); // 빨강일 때 10pt
-    lv_obj_set_size(s_circle_ring, 461, 461);            // 빨강일 때 지름 461pt
+    lv_obj_set_style_border_width(s_circle_ring, 10, 0); // 빨간 링 10pt
+    lv_obj_set_size(s_circle_ring, 461, 461);            // 빨간 링 직경 461pt
     lv_obj_center(s_circle_ring);
   } else {
     lv_color_t original_color = lv_color_hex(0x00FF00);
@@ -3328,10 +3526,11 @@ static void safety_ring_timer_cb(lv_timer_t *timer) {
       }
     }
     lv_obj_set_style_border_color(s_circle_ring, original_color, 0);
-    lv_obj_set_style_border_width(s_circle_ring, 5, 0); // 일반 상태 5pt
-    lv_obj_set_size(s_circle_ring, 463, 463);           // 일반 상태 463pt
+    lv_obj_set_style_border_width(s_circle_ring, 5, 0); // 일반 링 5pt
+    lv_obj_set_size(s_circle_ring, 463, 463);           // 일반 링 463pt
     lv_obj_center(s_circle_ring);
   }
+  lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
   lv_obj_invalidate(s_circle_ring);
 }
 
@@ -3539,6 +3738,10 @@ static void update_clear_display(uint8_t data1) {
     }
 
     // Clear speedometer mode safety elements
+    stop_speedometer_overspeed_alert();
+    if (s_speedometer_limit_dot != NULL) {
+      lv_obj_add_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
+    }
     if (s_speedometer_safety_image != NULL) {
       lv_obj_add_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN);
       // lv_img_set_src(s_speedometer_safety_image, NULL); // Preserve cache
@@ -3563,9 +3766,10 @@ static void update_clear_display(uint8_t data1) {
                                  lv_color_hex(0xFF8800), LV_PART_INDICATOR);
 
       lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
-      lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
+      lv_obj_add_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_HIDDEN);
       lv_obj_invalidate(s_speedometer_safety_arc);
     }
+    s_speedometer_safety_tt_val = 0;
 
     // Show speedometer mode speed labels when safety image is cleared
     if (s_current_mode == DISPLAY_MODE_GUIDE &&
@@ -3583,6 +3787,7 @@ static void update_clear_display(uint8_t data1) {
       if (s_speedometer_unit_label) {
         lv_obj_clear_flag(s_speedometer_unit_label, LV_OBJ_FLAG_HIDDEN);
       }
+      update_speedometer_clock();
     } else if (s_current_mode == DISPLAY_MODE_GUIDE &&
                s_guide_sub_mode == GUIDE_SUB_NAVI) {
       // HUD 모드에서도 도로명이 있으면 복구
@@ -4089,30 +4294,14 @@ static void update_speed_label(uint8_t data1, uint8_t speed) {
     // Speedometer mode display
     if (s_current_mode == DISPLAY_MODE_GUIDE &&
         s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
-      if (s_speedometer_needle_line != NULL) {
-        static int s_last_drawn_speed = -1;
-        int draw_speed = speed > 220 ? 220 : speed;
+      static int s_last_drawn_speed = -1;
+      int draw_speed = speed > 220 ? 220 : speed;
 
-        if (draw_speed != s_last_drawn_speed) {
-          s_last_drawn_speed = draw_speed;
-          double angle_deg = 156.0 + (draw_speed / 220.0) * 228.0;
-          double angle_rad = angle_deg * M_PI / 180.0;
-
-          int center_x = LCD_H_RES / 2;
-          int center_y = LCD_V_RES / 2;
-
-
-          double cos_a = cos(angle_rad);
-          double sin_a = sin(angle_rad);
-
-          // [User Request] 지름 226(반경 113px)부터 지름 400(반경 200px)까지 그리기
-          s_speedometer_needle_points[0].x = center_x + (int)(113.0 * cos_a);
-          s_speedometer_needle_points[0].y = center_y + (int)(113.0 * sin_a);
-          s_speedometer_needle_points[1].x = center_x + (int)(200.0 * cos_a);
-          s_speedometer_needle_points[1].y = center_y + (int)(200.0 * sin_a);
-
-          lv_line_set_points(s_speedometer_needle_line,
-                             s_speedometer_needle_points, 2);
+      if (draw_speed != s_last_drawn_speed) {
+        s_last_drawn_speed = draw_speed;
+        s_speedometer_current_speed_val = draw_speed;
+        if (s_speedometer_ticks_obj != NULL) {
+          lv_obj_invalidate(s_speedometer_ticks_obj);
         }
       }
 
@@ -4121,6 +4310,15 @@ static void update_speed_label(uint8_t data1, uint8_t speed) {
       if (s_speedometer_safety_image != NULL) {
         safety_visible =
             !lv_obj_has_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN);
+      }
+
+      // [User Request] 과속 판단: 제한 속도가 설정되어 있고 현재 속도가 제한 속도 이상인 경우
+      // 게이지 전체(45개 눈금 바)와 속도 숫자가 1초 간격으로 빨간색으로 깜박임
+      bool is_overspeed = (s_speedometer_safety_tt_val > 0 && speed >= s_speedometer_safety_tt_val);
+      if (is_overspeed) {
+        start_speedometer_overspeed_alert();
+      } else {
+        stop_speedometer_overspeed_alert();
       }
 
       static int s_speedometer_last_label_speed = -1;
@@ -5983,7 +6181,9 @@ static void load_all_fonts(void) {
   s_font_kopub_25 = load_font_from_fs("font_kopub_25");
   s_font_kopub_35 = load_font_from_fs("font_kopub_35");
   s_font_kopub_40 = load_font_from_fs("font_kopub_40");
+  s_font_orb_60 = load_font_from_fs("font_orb_60");
   s_font_orb_100 = load_font_from_fs("font_orb_100");
+  s_font_orb_130 = load_font_from_fs("font_orb_130");
   s_font_orb_155 = load_font_from_fs("font_orb_155");
   s_font_kopub_100 = load_font_from_fs("Kopub_100");
   s_font_addr_30 = load_font_from_fs("font_addr_30");
@@ -6655,6 +6855,10 @@ static void update_display_mode_ui(display_mode_t mode) {
     if (s_intro_image)
       lv_obj_add_flag(s_intro_image, LV_OBJ_FLAG_HIDDEN);
 
+    if (s_guide_sub_mode != GUIDE_SUB_SPEEDOMETER) {
+      stop_speedometer_overspeed_alert();
+    }
+
     if (s_guide_sub_mode == GUIDE_SUB_NAVI) {
       ESP_LOGI(TAG, "[DISPLAY] Switching to NAVI (HUD) Screen");
       // [Fix] 진입 시 속도 데이터를 받기 전까지 0으로 표시하고, 숨김 해제
@@ -6709,6 +6913,7 @@ static void update_display_mode_ui(display_mode_t mode) {
         if (s_speedometer_unit_label)
           lv_obj_add_flag(s_speedometer_unit_label, LV_OBJ_FLAG_HIDDEN);
       }
+      update_speedometer_clock();
       lv_scr_load(s_speedometer_screen);
     } else {
       // [STANDBY] 안내 모드 내의 대기 상태 -> 시계와 날짜 표시
@@ -6845,20 +7050,15 @@ static void update_display_mode_ui(display_mode_t mode) {
 
   // --- Centralized Circle Ring Visibility Control (Top Layer) ---
   if (s_circle_ring) {
-    if (mode == DISPLAY_MODE_GUIDE && s_guide_sub_mode != GUIDE_SUB_STANDBY) {
-      // Guide mode (Speedometer/NAVI) shows ring for GPS status
-      // (is_active_state)
+    if (mode == DISPLAY_MODE_GUIDE && s_guide_sub_mode == GUIDE_SUB_NAVI) {
+      // 내비모드(NAVI)에서는 기존 오리지널 GPS 링 동작 원복
       if (is_active_state)
         lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
       else
         lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
     } else {
-      // Standby, Clock, Album, Setting, etc: ONLY show ring if a safety alert
-      // (flashing) is active
-      if (s_safety_ring_timer != NULL)
-        lv_obj_clear_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
-      else
-        lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
+      // 속도계 모드(SPEEDOMETER) 및 기타 모드에서는 링 숨김
+      lv_obj_add_flag(s_circle_ring, LV_OBJ_FLAG_HIDDEN);
     }
   }
 
@@ -9091,6 +9291,9 @@ static void clock_timer_cb(lv_timer_t *timer) {
                             months[timeinfo.tm_mon % 12], day,
                             week_days[wday % 7]);
     }
+  } else if (s_current_mode == DISPLAY_MODE_GUIDE &&
+             s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
+    update_speedometer_clock();
   } else if (s_current_mode == DISPLAY_MODE_CLOCK) {
     int active_clock = s_clock_option;
     if (s_clock_option == 3) {
@@ -9270,6 +9473,52 @@ static void draw_analog_clock2(int hour, int minute, int second) {
     lv_label_set_text_fmt(s_clock2_date_label, "%04d.%02d.%02d %s",
                           t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
                           week_days[t.tm_wday % 7]);
+  }
+}
+
+// 속도계 모드 '틈새시계' 갱신 (세이프티 안내가 없을 때 표시)
+static void update_speedometer_clock(void) {
+  if (s_speedometer_clock_cont == NULL) {
+    return;
+  }
+
+  // Safety guidance is active if safety image is valid and visible
+  bool safety_active =
+      (s_speedometer_safety_image != NULL &&
+       !lv_obj_has_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN));
+
+  if (safety_active) {
+    if (!lv_obj_has_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN)) {
+      lv_obj_add_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN);
+    }
+    return;
+  }
+
+  // Safety is inactive -> show digital clock
+  if (lv_obj_has_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN)) {
+    lv_obj_clear_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_HIDDEN);
+  }
+
+  time_t now;
+  struct tm timeinfo;
+  time(&now);
+  localtime_r(&now, &timeinfo);
+
+  if (s_speedometer_clock_date_label != NULL) {
+    const char *korean_days[] = {"일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"};
+    lv_label_set_text_fmt(s_speedometer_clock_date_label, "%02d월 %02d일 %s",
+                          timeinfo.tm_mon + 1,
+                          timeinfo.tm_mday,
+                          korean_days[timeinfo.tm_wday % 7]);
+  }
+
+  if (s_speedometer_clock_hour_label != NULL) {
+    lv_label_set_text_fmt(s_speedometer_clock_hour_label, "%02d",
+                          timeinfo.tm_hour);
+  }
+  if (s_speedometer_clock_min_label != NULL) {
+    lv_label_set_text_fmt(s_speedometer_clock_min_label, "%02d",
+                          timeinfo.tm_min);
   }
 }
 
@@ -9590,80 +9839,110 @@ static void create_speedometer_ui(void) {
                               0); // Dark Blue as fallback
   }
   
-  // [User Request] 내부원을 다시 원으로 변경, 12시 밝은 하늘색(0x33CCFF) ~ 6시 리얼 검정(0x000000) 그라데이션 (지름 220px, 선두께 3px)
-  s_speedometer_inner_circle = lv_obj_create(s_speedometer_screen);
-  lv_obj_set_size(s_speedometer_inner_circle, 220, 220);
-  lv_obj_center(s_speedometer_inner_circle);
-  lv_obj_set_style_radius(s_speedometer_inner_circle, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_bg_opa(s_speedometer_inner_circle, LV_OPA_COVER, 0);
-  lv_obj_set_style_bg_color(s_speedometer_inner_circle, lv_color_hex(0x33CCFF), 0); // 12시: 밝은 하늘색
-  lv_obj_set_style_bg_grad_color(s_speedometer_inner_circle, lv_color_hex(0x000000), 0); // 6시: 리얼 검정색
-  lv_obj_set_style_bg_grad_dir(s_speedometer_inner_circle, LV_GRAD_DIR_VER, 0);
-  lv_obj_set_style_border_width(s_speedometer_inner_circle, 0, 0);
-  lv_obj_set_style_pad_all(s_speedometer_inner_circle, 0, 0);
-  lv_obj_set_scrollbar_mode(s_speedometer_inner_circle, LV_SCROLLBAR_MODE_OFF);
-  lv_obj_clear_flag(s_speedometer_inner_circle, LV_OBJ_FLAG_CLICKABLE);
+  // [User Request] 눈금 바 형태의 녹색 속도 게이지 (Radial Ticks Gauge)
+  s_speedometer_ticks_obj = lv_obj_create(s_speedometer_screen);
+  lv_obj_set_size(s_speedometer_ticks_obj, 466, 466);
+  lv_obj_center(s_speedometer_ticks_obj);
+  lv_obj_set_style_bg_opa(s_speedometer_ticks_obj, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(s_speedometer_ticks_obj, 0, 0);
+  lv_obj_set_style_pad_all(s_speedometer_ticks_obj, 0, 0);
+  lv_obj_clear_flag(s_speedometer_ticks_obj, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_clear_flag(s_speedometer_ticks_obj, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_scrollbar_mode(s_speedometer_ticks_obj, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_add_event_cb(s_speedometer_ticks_obj, speedometer_ticks_draw_event_cb, LV_EVENT_DRAW_MAIN, NULL);
+  s_speedometer_speed_arc = NULL;
 
-  // 내부를 가려줄 검은색 마스크 원 생성 (선 두께 3px 유지를 위해 지름 214px 설정)
-  lv_obj_t *inner_mask = lv_obj_create(s_speedometer_inner_circle);
-  lv_obj_set_size(inner_mask, 214, 214);
-  lv_obj_center(inner_mask);
-  lv_obj_set_style_radius(inner_mask, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_bg_opa(inner_mask, LV_OPA_COVER, 0);
-  lv_obj_set_style_bg_color(inner_mask, lv_color_hex(0x000000), 0); // 검은색 마스크
-  lv_obj_set_style_border_width(inner_mask, 0, 0);
-  lv_obj_set_style_pad_all(inner_mask, 0, 0);
-  lv_obj_set_scrollbar_mode(inner_mask, LV_SCROLLBAR_MODE_OFF);
-  lv_obj_clear_flag(inner_mask, LV_OBJ_FLAG_CLICKABLE);
+  // [User Request] 빨간색 제한속도 마커 점 (Red Dot, 14x14px)
+  s_speedometer_limit_dot = lv_obj_create(s_speedometer_screen);
+  lv_obj_set_size(s_speedometer_limit_dot, 14, 14);
+  lv_obj_set_style_radius(s_speedometer_limit_dot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_color(s_speedometer_limit_dot, lv_color_hex(0xFF3344), 0); // Vibrant Red
+  lv_obj_set_style_bg_opa(s_speedometer_limit_dot, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(s_speedometer_limit_dot, 1, 0);
+  lv_obj_set_style_border_color(s_speedometer_limit_dot, lv_color_white(), 0);
+  lv_obj_set_style_pad_all(s_speedometer_limit_dot, 0, 0);
+  lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_set_scrollbar_mode(s_speedometer_limit_dot, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_CLICKABLE);
 
-  // 2. Needle Line (Tapered shape)
-  s_speedometer_needle_line = lv_line_create(s_speedometer_screen);
-  lv_obj_set_style_line_width(s_speedometer_needle_line, 5,
-                              0); // 5px width * 2 offset = 10px center
-  lv_obj_set_style_line_color(s_speedometer_needle_line, lv_color_hex(0xFF0033),
-                              0); // Vibrant Red
-  lv_obj_set_style_line_rounded(s_speedometer_needle_line, true, 0);
-  lv_obj_clear_flag(s_speedometer_needle_line, LV_OBJ_FLAG_CLICKABLE);
+  // 초기 60 km/h 제한속도 마커 위치 설정
+  double init_limit_angle = 156.0 + (60.0 / 220.0) * 228.0;
+  double init_limit_rad = init_limit_angle * M_PI / 180.0;
+  int init_dot_x = (int)(194.0 * cos(init_limit_rad));
+  int init_dot_y = (int)(194.0 * sin(init_limit_rad));
+  lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, init_dot_x, init_dot_y);
 
-  // Set initial position (0 km/h)
-  double initial_angle_rad = 156.0 * M_PI / 180.0;
-  int cx = LCD_H_RES / 2;
-  int cy = LCD_V_RES / 2;
-
-
-  double cos_i = cos(initial_angle_rad);
-  double sin_i = sin(initial_angle_rad);
-
-  // [User Request] 지름 226(반경 113px)부터 지름 400(반경 200px)까지 그리기
-  s_speedometer_needle_points[0].x = cx + (int)(113.0 * cos_i);
-  s_speedometer_needle_points[0].y = cy + (int)(113.0 * sin_i);
-  s_speedometer_needle_points[1].x = cx + (int)(200.0 * cos_i);
-  s_speedometer_needle_points[1].y = cy + (int)(200.0 * sin_i);
-
-  lv_line_set_points(s_speedometer_needle_line, s_speedometer_needle_points, 2);
-
-  // 3. Center Cap Image (Disabled per user request)
-  // s_speedometer_center_img = lv_img_create(s_speedometer_screen);
-  // lv_img_set_src(s_speedometer_center_img, "S:/littlefs/speed/center.png");
-  // lv_obj_center(s_speedometer_center_img);
-  // lv_obj_clear_flag(s_speedometer_center_img, LV_OBJ_FLAG_CLICKABLE);
+  s_speedometer_inner_circle = NULL;
+  s_speedometer_needle_line = NULL;
 
   // 2. Speed Labels
   s_speedometer_speed_label = lv_label_create(s_speedometer_screen);
-  lv_obj_set_style_text_font(s_speedometer_speed_label, &font_kopub_100, 0);
+  lv_obj_set_style_text_font(s_speedometer_speed_label, &font_ORB_130, 0);
   lv_obj_set_style_text_color(s_speedometer_speed_label, lv_color_white(), 0);
   lv_label_set_text(s_speedometer_speed_label, "0");
-  lv_obj_align(s_speedometer_speed_label, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(s_speedometer_speed_label, LV_ALIGN_CENTER, 0, 150);
 
   s_speedometer_unit_label = lv_label_create(s_speedometer_screen);
   lv_obj_set_style_text_font(s_speedometer_unit_label, &font_kopub_25, 0);
-  lv_obj_set_style_text_color(s_speedometer_unit_label, lv_color_hex(0x777777), 0);
+  lv_obj_set_style_text_color(s_speedometer_unit_label, lv_color_hex(0x888888), 0);
   lv_label_set_text(s_speedometer_unit_label, "km/h");
-  lv_obj_align(s_speedometer_unit_label, LV_ALIGN_CENTER, 0, -75);
+  lv_obj_align(s_speedometer_unit_label, LV_ALIGN_CENTER, 0, 215);
+
+  // 속도계 모드 '틈새시계' (세이프티 안내가 없을 때 표시되는 디지탈 시계 및 날짜)
+  s_speedometer_clock_cont = lv_obj_create(s_speedometer_screen);
+  lv_obj_set_size(s_speedometer_clock_cont, 400, 200);
+  lv_obj_align(s_speedometer_clock_cont, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_set_style_bg_opa(s_speedometer_clock_cont, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(s_speedometer_clock_cont, 0, 0);
+  lv_obj_set_style_pad_all(s_speedometer_clock_cont, 0, 0);
+  lv_obj_set_scrollbar_mode(s_speedometer_clock_cont, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_clear_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_clear_flag(s_speedometer_clock_cont, LV_OBJ_FLAG_SCROLLABLE);
+
+  // 1. Date Label (MM월 DD일 x요일, font_addr_30, 어두운 회색, 중심에서 위로 60pt)
+  s_speedometer_clock_date_label = lv_label_create(s_speedometer_clock_cont);
+  lv_obj_set_style_text_font(s_speedometer_clock_date_label, &font_addr_30, 0);
+  lv_obj_set_style_text_color(s_speedometer_clock_date_label,
+                              lv_color_hex(0x808080), 0); // 어두운 회색 (Dark Gray)
+  lv_obj_align(s_speedometer_clock_date_label, LV_ALIGN_CENTER, 0, -60);
+  lv_label_set_text(s_speedometer_clock_date_label, "01월 01일 월요일");
+
+  // 2. Time Row Container (HH : MM)
+  lv_obj_t *time_row = lv_obj_create(s_speedometer_clock_cont);
+  lv_obj_set_size(time_row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+  lv_obj_set_flex_flow(time_row, LV_FLEX_FLOW_ROW);
+  lv_obj_set_flex_align(time_row, LV_FLEX_ALIGN_CENTER,
+                        LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+  lv_obj_set_style_bg_opa(time_row, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_width(time_row, 0, 0);
+  lv_obj_set_style_pad_all(time_row, 0, 0);
+  lv_obj_set_style_pad_column(time_row, 4, 0);
+  lv_obj_set_scrollbar_mode(time_row, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_clear_flag(time_row, LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_clear_flag(time_row, LV_OBJ_FLAG_SCROLLABLE);
+  lv_obj_align(time_row, LV_ALIGN_CENTER, 0, 0);
+
+  s_speedometer_clock_hour_label = lv_label_create(time_row);
+  lv_obj_set_style_text_font(s_speedometer_clock_hour_label, &font_ORB_60, 0);
+  lv_obj_set_style_text_color(s_speedometer_clock_hour_label,
+                              lv_color_hex(0xD9A700), 0); // 어두운 노랑색 (Dark Yellow)
+  lv_label_set_text(s_speedometer_clock_hour_label, "12");
+
+  s_speedometer_clock_colon_label = lv_label_create(time_row);
+  lv_obj_set_style_text_font(s_speedometer_clock_colon_label, &font_ORB_60, 0);
+  lv_obj_set_style_text_color(s_speedometer_clock_colon_label,
+                              lv_color_hex(0xD95B00), 0); // 어두운 주황색 (Dark Orange)
+  lv_label_set_text(s_speedometer_clock_colon_label, ":");
+
+  s_speedometer_clock_min_label = lv_label_create(time_row);
+  lv_obj_set_style_text_font(s_speedometer_clock_min_label, &font_ORB_60, 0);
+  lv_obj_set_style_text_color(s_speedometer_clock_min_label,
+                              lv_color_hex(0xD9A700), 0); // 어두운 노랑색 (Dark Yellow)
+  lv_label_set_text(s_speedometer_clock_min_label, "00");
 
   // 3. Safety UI Elements (Initially Hidden)
   s_speedometer_safety_arc = lv_arc_create(s_speedometer_screen);
-  lv_obj_set_size(s_speedometer_safety_arc, 450, 450); // Diameter 450px
+  lv_obj_set_size(s_speedometer_safety_arc, 446, 446); // Diameter 446px
   lv_obj_center(s_speedometer_safety_arc);
 
   // Set the arc to match the speedometer scale: 156 start, 228 degrees span
@@ -9672,6 +9951,9 @@ static void create_speedometer_ui(void) {
   lv_arc_set_mode(s_speedometer_safety_arc, LV_ARC_MODE_NORMAL);
 
   lv_obj_remove_style(s_speedometer_safety_arc, NULL, LV_PART_KNOB);
+  lv_obj_set_style_bg_opa(s_speedometer_safety_arc, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_width(s_speedometer_safety_arc, 0, LV_PART_MAIN);
+  lv_obj_set_style_pad_all(s_speedometer_safety_arc, 0, LV_PART_MAIN);
   lv_obj_set_style_arc_width(s_speedometer_safety_arc, 0,
                              LV_PART_MAIN); // Hide background completely
   lv_obj_set_style_arc_rounded(s_speedometer_safety_arc, false, LV_PART_MAIN);
@@ -9692,28 +9974,30 @@ static void create_speedometer_ui(void) {
   lv_arc_set_angles(s_speedometer_safety_arc, start_angle, 228);
 
   lv_obj_clear_flag(s_speedometer_safety_arc, LV_OBJ_FLAG_CLICKABLE);
-  lv_obj_clear_flag(s_speedometer_safety_arc,
-                    LV_OBJ_FLAG_HIDDEN); // 기본적으로 표시됨
+  lv_obj_add_flag(s_speedometer_safety_arc,
+                    LV_OBJ_FLAG_HIDDEN); // 상시 숨김 (주황색 링 제거)
 
   s_speedometer_safety_image = lv_img_create(s_speedometer_screen);
+  lv_img_set_zoom(s_speedometer_safety_image, 333); // 130% (30% 확대)
   lv_obj_add_flag(s_speedometer_safety_image, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_align(s_speedometer_safety_image, LV_ALIGN_CENTER, 0, 116);
+  lv_obj_align(s_speedometer_safety_image, LV_ALIGN_CENTER, 0, 0);
 
   s_speedometer_safety_value_label = lv_label_create(s_speedometer_screen);
   lv_obj_add_flag(s_speedometer_safety_value_label, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_set_style_text_font(s_speedometer_safety_value_label, &font_kopub_35,
+  lv_obj_set_style_text_font(s_speedometer_safety_value_label, &font_kopub_40,
                              0);
   lv_obj_set_style_text_color(s_speedometer_safety_value_label,
-                              lv_color_hex(0x00FF00), 0); // Green
-  lv_obj_align(s_speedometer_safety_value_label, LV_ALIGN_CENTER, 110, 146);
+                              lv_color_hex(0xD9A700), 0); // Dark Yellow
+  lv_obj_align(s_speedometer_safety_value_label, LV_ALIGN_CENTER, -15, -105);
 
   s_speedometer_safety_unit_label = lv_label_create(s_speedometer_screen);
   lv_obj_add_flag(s_speedometer_safety_unit_label, LV_OBJ_FLAG_HIDDEN);
   lv_obj_set_style_text_font(s_speedometer_safety_unit_label, &font_kopub_25,
                              0);
-  lv_obj_set_style_text_color(s_speedometer_safety_unit_label, lv_color_white(),
-                              0);
-  lv_obj_align(s_speedometer_safety_unit_label, LV_ALIGN_CENTER, 170, 146);
+  lv_obj_set_style_text_color(s_speedometer_safety_unit_label, lv_color_hex(0xD9A700),
+                              0); // Dark Yellow
+  lv_obj_align_to(s_speedometer_safety_unit_label, s_speedometer_safety_value_label,
+                  LV_ALIGN_OUT_RIGHT_MID, 6, 0);
 
   // Road Name Label for Speedometer Mode
   s_speedometer_road_name_label = lv_label_create(s_speedometer_screen);
@@ -9784,6 +10068,8 @@ static void create_speedometer_ui(void) {
   if (s_speedometer_center_img) {
     lv_obj_move_foreground(s_speedometer_center_img);
   }
+
+  update_speedometer_clock();
 }
 
 static void create_setting_ui(void) {

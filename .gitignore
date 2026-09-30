@@ -18,7 +18,10 @@ __pycache__/
 
 # Logs
 *.log
-main/flash_data/merged_log.txt
+
+# Temporary / Comparison files
+.tmp.driveupload/
+fc_output.txt
 
 # IDE Cache
 .cache/
