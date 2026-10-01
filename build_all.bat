@@ -5,13 +5,13 @@ setlocal
 if "%IDF_PATH%"=="" (
     if exist "C:\esp\v5.5.3\esp-idf" (
         set "IDF_PATH=C:\esp\v5.5.3\esp-idf"
-        set "IDF_TOOLS_PATH=C:\Espressif\tools"
+        set "IDF_TOOLS_PATH=C:\Espressif"
     ) else if exist "C:\esp" (
         set "IDF_PATH=C:\esp"
-        set "IDF_TOOLS_PATH=C:\Espressif\tools"
+        set "IDF_TOOLS_PATH=C:\Espressif"
     )
 ) else (
-    set "IDF_TOOLS_PATH=C:\Espressif\tools"
+    set "IDF_TOOLS_PATH=C:\Espressif"
 )
 
 if "%PYTHON_EXE%"=="" (
@@ -43,9 +43,9 @@ echo [DEBUG] Using IDF_PATH: %IDF_PATH%
 echo [DEBUG] Using PYTHON_EXE: %PYTHON_EXE%
 
 echo ==========================================
-echo [1/2] Building for movision...
+echo [1/3] Building for Movision_kr (R23)...
 echo ==========================================
-"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" movision
+"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" kr
 if %errorlevel% neq 0 goto :error
 
 :: Force clean build by removing build directory
@@ -55,17 +55,34 @@ if exist build rd /s /q build
 call "%PYTHON_EXE%" "%IDF_PATH%\tools\idf.py" build
 if %errorlevel% neq 0 goto :error
 
-"%PYTHON_EXE%" "%SCRIPT_PACKAGE%" movision
+"%PYTHON_EXE%" "%SCRIPT_PACKAGE%" kr
 if %errorlevel% neq 0 goto :error
 
 echo.
 echo ==========================================
-echo [2/2] Building for movision_ws...
+echo [2/3] Building for movision_mp (0223 MP)...
+echo ==========================================
+"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" mp
+if %errorlevel% neq 0 goto :error
+
+:: Force clean build for the second board
+if exist build rd /s /q build
+
+:: Build
+call "%PYTHON_EXE%" "%IDF_PATH%\tools\idf.py" build
+if %errorlevel% neq 0 goto :error
+
+"%PYTHON_EXE%" "%SCRIPT_PACKAGE%" mp
+if %errorlevel% neq 0 goto :error
+
+echo.
+echo ==========================================
+echo [3/3] Building for movision_ws (Waveshare)...
 echo ==========================================
 "%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" ws
 if %errorlevel% neq 0 goto :error
 
-:: Force clean build for the second board too
+:: Force clean build for the third board
 if exist build rd /s /q build
 
 :: Build
@@ -74,6 +91,9 @@ if %errorlevel% neq 0 goto :error
 
 "%PYTHON_EXE%" "%SCRIPT_PACKAGE%" ws
 if %errorlevel% neq 0 goto :error
+
+:: Restore default board config (Movision_kr) for IDE development
+"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" kr
 
 echo.
 echo ==========================================

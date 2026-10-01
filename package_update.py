@@ -9,13 +9,20 @@ def package(board_name="hd1"):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     update_root = os.path.join(current_dir, "update")
     
-    # Custom naming logic as per user request
-    if board_name == "movision":
-        folder_name = f"update_movision_v{version}"
-    elif board_name in ["ws", "hd1"]:
+    # Custom naming logic for 3 boards (Movision_kr, movision_mp, movision_ws)
+    b = str(board_name).lower()
+    if b in ["kr", "movision_kr", "r23", "movision_r23", "movision"]:
+        folder_name = f"update_movision_kr_v{version}"
+        model_display = "MOVISION-KR"
+    elif b in ["mp", "movision_mp", "0223", "movision_0223", "b0223"]:
+        folder_name = f"update_movision_mp_v{version}"
+        model_display = "MOVISION-MP"
+    elif b in ["ws", "movision_ws", "waveshare", "hd1"]:
         folder_name = f"update_movision_ws_v{version}"
+        model_display = "MOVISION-WS"
     else:
         folder_name = f"update_movision-{board_name}_v{version}"
+        model_display = f"MOVISION-{board_name.upper()}"
         
     target_dir = os.path.join(update_root, folder_name)
     build_dir = os.path.join(current_dir, "build")
@@ -59,7 +66,7 @@ def package(board_name="hd1"):
 
     # Create readme.txt (renamed from 참고사항.txt for consistency)
     memo_path = os.path.join(target_dir, "readme.txt")
-    memo_content = f"""모델명 : MOVISION-{board_name.upper()}
+    memo_content = f"""모델명 : {model_display}
 F/W : {version}
 날짜 : {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 

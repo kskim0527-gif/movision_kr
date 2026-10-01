@@ -732,6 +732,15 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
   int max_active_tick = (int)(current_speed * (float)(NUM_TICKS - 1) / 220.0f);
   if (max_active_tick >= NUM_TICKS) max_active_tick = NUM_TICKS - 1;
 
+  // 제한속도 위치 틱 계산 (유효한 제한속도가 있을 경우)
+  int limit_tick = -1;
+  if (s_speedometer_safety_tt_val > 0) {
+    int limit_val = s_speedometer_safety_tt_val > 220 ? 220 : s_speedometer_safety_tt_val;
+    limit_tick = (int)((float)limit_val * (float)(NUM_TICKS - 1) / 220.0f + 0.5f);
+    if (limit_tick >= NUM_TICKS) limit_tick = NUM_TICKS - 1;
+    if (limit_tick < 0) limit_tick = 0;
+  }
+
   for (int i = 0; i < NUM_TICKS; i++) {
     float angle_deg = START_ANGLE + (float)i * (TOTAL_ANGLE / (float)(NUM_TICKS - 1));
     float angle_rad = angle_deg * ((float)M_PI / 180.0f);
@@ -753,7 +762,10 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
 
     if (s_speedometer_overspeed_flash_state) {
       // [과속 점멸 상태] 45개 눈금 바 전체를 강렬한 빨간색 테마로 표시
-      if (i <= max_active_tick) {
+      if (limit_tick >= 0 && i == limit_tick) {
+        line_dsc.color = lv_color_hex(0xFF0033); // 제한속도 블럭: 선명한 빨간색
+        line_dsc.opa = LV_OPA_COVER;
+      } else if (i <= max_active_tick) {
         line_dsc.color = lv_color_hex(0xFF0033); // 도달 구간: 선명한 빨간색
         line_dsc.opa = LV_OPA_COVER;
       } else {
@@ -761,11 +773,11 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
         line_dsc.opa = LV_OPA_COVER;
       }
     } else {
-      // [평상시 상태] 정상 녹색/연두색 테마
-      if (i == max_active_tick) {
-        line_dsc.color = lv_color_hex(0xFF3344); // 가장 위의 블럭(선두 지침): 선명한 빨간색
+      // [평상시 상태] 정상 녹색/연두색 테마 + 제한속도 빨간색 블럭
+      if (limit_tick >= 0 && i == limit_tick) {
+        line_dsc.color = lv_color_hex(0xFF3344); // 제한속도 게이지 블럭: 선명한 빨간색
         line_dsc.opa = LV_OPA_COVER;
-      } else if (i < max_active_tick) {
+      } else if (i <= max_active_tick) {
         line_dsc.color = lv_color_hex(0x22C55E); // 선명한 연두/녹색 (도달 구간)
         line_dsc.opa = LV_OPA_COVER;
       } else {
@@ -2845,13 +2857,10 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
             lv_obj_invalidate(s_speedometer_safety_arc);
 
             if (s_speedometer_limit_dot != NULL) {
-              double limit_angle = 156.0 + (limit_speed / 220.0) * 228.0;
-              double limit_rad = limit_angle * M_PI / 180.0;
-              int dot_x = (int)(194.0 * cos(limit_rad));
-              int dot_y = (int)(194.0 * sin(limit_rad));
-              lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, dot_x, dot_y);
-              lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
-              lv_obj_move_foreground(s_speedometer_limit_dot);
+              lv_obj_add_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
+            }
+            if (s_speedometer_ticks_obj != NULL) {
+              lv_obj_invalidate(s_speedometer_ticks_obj);
             }
           } else {
             // 제한속도 표기가 없는 경우
@@ -2967,13 +2976,10 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
             lv_obj_invalidate(s_speedometer_safety_arc);
 
             if (s_speedometer_limit_dot != NULL) {
-              double limit_angle = 156.0 + (limit_speed / 220.0) * 228.0;
-              double limit_rad = limit_angle * M_PI / 180.0;
-              int dot_x = (int)(194.0 * cos(limit_rad));
-              int dot_y = (int)(194.0 * sin(limit_rad));
-              lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, dot_x, dot_y);
-              lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
-              lv_obj_move_foreground(s_speedometer_limit_dot);
+              lv_obj_add_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_HIDDEN);
+            }
+            if (s_speedometer_ticks_obj != NULL) {
+              lv_obj_invalidate(s_speedometer_ticks_obj);
             }
           } else {
             // 제한속도 표기가 없는 경우
@@ -3770,6 +3776,9 @@ static void update_clear_display(uint8_t data1) {
       lv_obj_invalidate(s_speedometer_safety_arc);
     }
     s_speedometer_safety_tt_val = 0;
+    if (s_speedometer_ticks_obj != NULL) {
+      lv_obj_invalidate(s_speedometer_ticks_obj);
+    }
 
     // Show speedometer mode speed labels when safety image is cleared
     if (s_current_mode == DISPLAY_MODE_GUIDE &&
@@ -6061,6 +6070,28 @@ static esp_err_t lcd_init_panel(void) {
     s_lvgl_mutex = xSemaphoreCreateRecursiveMutex();
   }
 
+#ifdef PIN_NUM_LCD_VCI_EN
+  if (PIN_NUM_LCD_VCI_EN != GPIO_NUM_NC) {
+    // Initialize LCD_VCI_EN pin (GPIO 18 on 0223 MP & WS) - Power enable for LCD
+    gpio_config_t vci_en_conf = {
+        .pin_bit_mask = (1ULL << PIN_NUM_LCD_VCI_EN),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    esp_err_t vci_ret = gpio_config(&vci_en_conf);
+    if (vci_ret != ESP_OK) {
+      ESP_LOGE(TAG, "LCD: Failed to configure LCD_VCI_EN pin (%s)",
+               esp_err_to_name(vci_ret));
+    } else {
+      gpio_set_level(PIN_NUM_LCD_VCI_EN, 1);
+      ESP_LOGI(TAG, "LCD: LCD_VCI_EN (GPIO %d) set to HIGH", PIN_NUM_LCD_VCI_EN);
+      vTaskDelay(pdMS_TO_TICKS(100)); // Wait for LCD power to stabilize
+    }
+  }
+#endif
+
   // Increase image cache size to 16 to utilize PSRAM effectively and prevent cache eviction lag.
   // Each 466x466 RGB565 image takes ~434KB. 16 images = ~6.9MB.
   lv_img_cache_set_size(16);
@@ -7435,7 +7466,7 @@ void update_setting_ui_labels(void) {
       if (s_setting_line_bright_up)
         lv_obj_clear_flag(s_setting_line_bright_up, LV_OBJ_FLAG_HIDDEN);
       if (s_setting_circ_bright_up)
-        lv_obj_add_flag(s_setting_circ_bright_up, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(s_setting_circ_bright_up, LV_OBJ_FLAG_HIDDEN);
     }
 
     // DOWN 버튼: 1단계에 도달하면 비활성화 + 화살표 숨김 + 원형 표시
@@ -7450,7 +7481,7 @@ void update_setting_ui_labels(void) {
       if (s_setting_line_bright_dn)
         lv_obj_clear_flag(s_setting_line_bright_dn, LV_OBJ_FLAG_HIDDEN);
       if (s_setting_circ_bright_dn)
-        lv_obj_add_flag(s_setting_circ_bright_dn, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(s_setting_circ_bright_dn, LV_OBJ_FLAG_HIDDEN);
     }
   }
 
@@ -7475,7 +7506,7 @@ void update_setting_ui_labels(void) {
       if (s_setting_line_album_up)
         lv_obj_clear_flag(s_setting_line_album_up, LV_OBJ_FLAG_HIDDEN);
       if (s_setting_circ_album_up)
-        lv_obj_add_flag(s_setting_circ_album_up, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(s_setting_circ_album_up, LV_OBJ_FLAG_HIDDEN);
     }
 
     if (s_album_option == 1) {
@@ -7491,7 +7522,7 @@ void update_setting_ui_labels(void) {
       if (s_setting_line_album_dn)
         lv_obj_clear_flag(s_setting_line_album_dn, LV_OBJ_FLAG_HIDDEN);
       if (s_setting_circ_album_dn)
-        lv_obj_add_flag(s_setting_circ_album_dn, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(s_setting_circ_album_dn, LV_OBJ_FLAG_HIDDEN);
     }
   }
 
@@ -7518,7 +7549,7 @@ void update_setting_ui_labels(void) {
       if (s_setting_line_clock_up)
         lv_obj_clear_flag(s_setting_line_clock_up, LV_OBJ_FLAG_HIDDEN);
       if (s_setting_circ_clock_up)
-        lv_obj_add_flag(s_setting_circ_clock_up, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(s_setting_circ_clock_up, LV_OBJ_FLAG_HIDDEN);
     }
 
     if (s_clock_option == 3) {
@@ -9169,13 +9200,20 @@ static lv_obj_t *s_clock1_hour_shadow;
 static lv_obj_t *s_clock1_minute_bg;
 static lv_obj_t *s_clock1_minute_fg;
 static lv_obj_t *s_clock1_minute_shadow;
+static lv_obj_t *s_clock1_second_line = NULL;
+static lv_obj_t *s_clock1_second_shadow = NULL;
+static lv_obj_t *s_clock1_second_dot = NULL;
 static lv_point_t s_clock1_hour_points[2];
 static lv_point_t s_clock1_hour_fg_points[2];
 static lv_point_t s_clock1_hour_shadow_points[2];
 static lv_point_t s_clock1_minute_points[2];
 static lv_point_t s_clock1_minute_fg_points[2];
 static lv_point_t s_clock1_minute_shadow_points[2];
+static lv_point_t s_clock1_second_points[2];
+static lv_point_t s_clock1_second_shadow_points[2];
 static lv_obj_t *s_clock_bg_img = NULL;
+static lv_obj_t *s_clock_gold_ring = NULL;
+static lv_obj_t *s_clock_gold_sub_ring = NULL;
 static lv_obj_t *s_clock_center_dot = NULL;
 
 // Clock 2 Objects (AutoViScope Digital Clock)
@@ -9454,6 +9492,37 @@ static void draw_analog_clock(int hour, int minute, int second) {
   s_clock1_minute_fg_points[1].x = s_clock1_minute_points[1].x;
   s_clock1_minute_fg_points[1].y = s_clock1_minute_points[1].y;
   lv_line_set_points(s_clock1_minute_fg, s_clock1_minute_fg_points, 2);
+
+  // Second Hand (Slim needle with counterweight & luminous dot)
+  if (s_clock1_second_line) {
+    double s_rad = (second * 6 - 90) * M_PI / 180.0;
+    int s_tip = (int)(r * 0.96);     // 204px
+    int s_tail = 30;                 // 30px counterweight
+    int s_dot_dist = (int)(r * 0.70); // 149px distance for luminous lollipop dot
+
+    // Second Hand Shadow (offset +3px, +3px)
+    if (s_clock1_second_shadow) {
+      s_clock1_second_shadow_points[0].x = cx - (int)(s_tail * cos(s_rad)) + 3;
+      s_clock1_second_shadow_points[0].y = cy - (int)(s_tail * sin(s_rad)) + 3;
+      s_clock1_second_shadow_points[1].x = cx + (int)(s_tip * cos(s_rad)) + 3;
+      s_clock1_second_shadow_points[1].y = cy + (int)(s_tip * sin(s_rad)) + 3;
+      lv_line_set_points(s_clock1_second_shadow, s_clock1_second_shadow_points, 2);
+    }
+
+    // Second Hand points (tail to tip)
+    s_clock1_second_points[0].x = cx - (int)(s_tail * cos(s_rad));
+    s_clock1_second_points[0].y = cy - (int)(s_tail * sin(s_rad));
+    s_clock1_second_points[1].x = cx + (int)(s_tip * cos(s_rad));
+    s_clock1_second_points[1].y = cy + (int)(s_tip * sin(s_rad));
+    lv_line_set_points(s_clock1_second_line, s_clock1_second_points, 2);
+
+    // Luminous lollipop dot position
+    if (s_clock1_second_dot) {
+      int dot_x = cx + (int)(s_dot_dist * cos(s_rad));
+      int dot_y = cy + (int)(s_dot_dist * sin(s_rad));
+      lv_obj_set_pos(s_clock1_second_dot, dot_x - 4, dot_y - 4);
+    }
+  }
 }
 
 static void draw_analog_clock2(int hour, int minute, int second) {
@@ -9539,57 +9608,105 @@ static void create_clock_ui(void) {
   lv_obj_clear_flag(s_clock_screen, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_set_scrollbar_mode(s_clock_screen, LV_SCROLLBAR_MODE_OFF);
 
-  lv_color_t orange_fill = lv_color_make(255, 100, 0);
-  lv_color_t dark_fill = lv_color_make(64, 64, 64);
+  // [User Request] 시계1 외곽 여백을 채우는 고급스러운 어두운 골드 링 (더블 골드 베젤 링)
+  // 1. 외곽 메인 골드 링 (차분하고 깊이감 있는 앤티크 다크 골드)
+  s_clock_gold_ring = lv_obj_create(s_clock_screen);
+  lv_obj_set_size(s_clock_gold_ring, 460, 460);
+  lv_obj_set_style_radius(s_clock_gold_ring, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(s_clock_gold_ring, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_color(s_clock_gold_ring, lv_color_hex(0xB8860B), 0); // Dark Goldenrod
+  lv_obj_set_style_border_width(s_clock_gold_ring, 4, 0);
+  lv_obj_set_style_pad_all(s_clock_gold_ring, 0, 0);
+  lv_obj_clear_flag(s_clock_gold_ring, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_scrollbar_mode(s_clock_gold_ring, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_center(s_clock_gold_ring);
 
-  // Shadow lines (Draw first to be at bottom)
+  // 2. 내측 서브 골드 링 (정교한 딥 브론즈 골드 악센트)
+  s_clock_gold_sub_ring = lv_obj_create(s_clock_screen);
+  lv_obj_set_size(s_clock_gold_sub_ring, 444, 444);
+  lv_obj_set_style_radius(s_clock_gold_sub_ring, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_opa(s_clock_gold_sub_ring, LV_OPA_TRANSP, 0);
+  lv_obj_set_style_border_color(s_clock_gold_sub_ring, lv_color_hex(0x8C6514), 0); // Deep Bronze Gold Accent
+  lv_obj_set_style_border_width(s_clock_gold_sub_ring, 2, 0);
+  lv_obj_set_style_pad_all(s_clock_gold_sub_ring, 0, 0);
+  lv_obj_clear_flag(s_clock_gold_sub_ring, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+  lv_obj_set_scrollbar_mode(s_clock_gold_sub_ring, LV_SCROLLBAR_MODE_OFF);
+  lv_obj_center(s_clock_gold_sub_ring);
+
+  // [User Request] 슬림한 메탈릭 골드 시침 / 분침 / 초침 (Slim Metallic Gold Hands)
+  // 1. 시침 그림자 (슬림 바늘에 맞춘 은은한 그림자)
   s_clock1_hour_shadow = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_hour_shadow, 32, 0);
+  lv_obj_set_style_line_width(s_clock1_hour_shadow, 8, 0);
   lv_obj_set_style_line_color(s_clock1_hour_shadow, lv_color_black(), 0);
-  lv_obj_set_style_line_opa(s_clock1_hour_shadow, LV_OPA_20, 0);
+  lv_obj_set_style_line_opa(s_clock1_hour_shadow, LV_OPA_30, 0);
   lv_obj_set_style_line_rounded(s_clock1_hour_shadow, true, 0);
 
+  // 2. 분침 그림자
   s_clock1_minute_shadow = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_minute_shadow, 32, 0);
+  lv_obj_set_style_line_width(s_clock1_minute_shadow, 6, 0);
   lv_obj_set_style_line_color(s_clock1_minute_shadow, lv_color_black(), 0);
-  lv_obj_set_style_line_opa(s_clock1_minute_shadow, LV_OPA_20, 0);
+  lv_obj_set_style_line_opa(s_clock1_minute_shadow, LV_OPA_30, 0);
   lv_obj_set_style_line_rounded(s_clock1_minute_shadow, true, 0);
 
+  // 3. 초침 그림자
+  s_clock1_second_shadow = lv_line_create(s_clock_screen);
+  lv_obj_set_style_line_width(s_clock1_second_shadow, 2, 0);
+  lv_obj_set_style_line_color(s_clock1_second_shadow, lv_color_black(), 0);
+  lv_obj_set_style_line_opa(s_clock1_second_shadow, LV_OPA_30, 0);
+  lv_obj_set_style_line_rounded(s_clock1_second_shadow, true, 0);
+
+  // 4. 시침 베이스 (입체감 주는 앤티크 골드 림, 폭 8px)
   s_clock1_hour_bg = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_hour_bg, 32, 0); // Thicker (was 26px)
-  lv_obj_set_style_line_color(s_clock1_hour_bg, lv_color_white(), 0);
+  lv_obj_set_style_line_width(s_clock1_hour_bg, 8, 0);
+  lv_obj_set_style_line_color(s_clock1_hour_bg, lv_color_hex(0x9E741A), 0); // Antique Gold Shadow Edge
   lv_obj_set_style_line_rounded(s_clock1_hour_bg, true, 0);
 
+  // 5. 시침 메탈 하이라이트 코어 (빛 반사 하이라이트, 폭 4px)
   s_clock1_hour_fg = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_hour_fg, 22, 0); // Thicker (was 26px)
-  lv_obj_set_style_line_color(s_clock1_hour_fg, dark_fill, 0);
+  lv_obj_set_style_line_width(s_clock1_hour_fg, 4, 0);
+  lv_obj_set_style_line_color(s_clock1_hour_fg, lv_color_hex(0xF5CF65), 0); // Polished Metallic Gold
   lv_obj_set_style_line_rounded(s_clock1_hour_fg, true, 0);
 
+  // 6. 분침 베이스 (입체감 주는 앤티크 골드 림, 폭 6px)
   s_clock1_minute_bg = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_minute_bg, 32,
-                              0); // Thicker (was 26px)
-  lv_obj_set_style_line_color(s_clock1_minute_bg, lv_color_white(), 0);
+  lv_obj_set_style_line_width(s_clock1_minute_bg, 6, 0);
+  lv_obj_set_style_line_color(s_clock1_minute_bg, lv_color_hex(0x9E741A), 0); // Antique Gold Shadow Edge
   lv_obj_set_style_line_rounded(s_clock1_minute_bg, true, 0);
 
+  // 7. 분침 메탈 하이라이트 코어 (빛 반사 하이라이트, 폭 2px)
   s_clock1_minute_fg = lv_line_create(s_clock_screen);
-  lv_obj_set_style_line_width(s_clock1_minute_fg, 22,
-                              0); // Thicker (was 26px)
-  lv_obj_set_style_line_color(s_clock1_minute_fg, orange_fill, 0);
+  lv_obj_set_style_line_width(s_clock1_minute_fg, 2, 0);
+  lv_obj_set_style_line_color(s_clock1_minute_fg, lv_color_hex(0xF5CF65), 0); // Polished Metallic Gold
   lv_obj_set_style_line_rounded(s_clock1_minute_fg, true, 0);
 
+  // 8. 초침 본체 (슬림 메탈릭 골드 니들 바늘, 폭 2px)
+  s_clock1_second_line = lv_line_create(s_clock_screen);
+  lv_obj_set_style_line_width(s_clock1_second_line, 2, 0);
+  lv_obj_set_style_line_color(s_clock1_second_line, lv_color_hex(0xF5CF65), 0); // Polished Metallic Gold
+  lv_obj_set_style_line_rounded(s_clock1_second_line, true, 0);
+
+  // 9. 초침 야광 롤리팝 도트 (8px)
+  s_clock1_second_dot = lv_obj_create(s_clock_screen);
+  lv_obj_set_size(s_clock1_second_dot, 8, 8);
+  lv_obj_set_style_radius(s_clock1_second_dot, LV_RADIUS_CIRCLE, 0);
+  lv_obj_set_style_bg_color(s_clock1_second_dot, lv_color_hex(0xFFFFFF), 0); // Luminous White
+  lv_obj_set_style_border_width(s_clock1_second_dot, 2, 0);
+  lv_obj_set_style_border_color(s_clock1_second_dot, lv_color_hex(0xF5CF65), 0); // Gold Rim
+  lv_obj_set_style_pad_all(s_clock1_second_dot, 0, 0);
+  lv_obj_clear_flag(s_clock1_second_dot, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
+
+  // 10. 센터 핀 (바늘에 어울리는 슬림 골드 메탈 캡, 20px)
   s_clock_center_dot = lv_obj_create(s_clock_screen);
-  lv_obj_set_size(s_clock_center_dot, 46, 46); // Adjusted to 46px
+  lv_obj_set_size(s_clock_center_dot, 20, 20);
   lv_obj_set_style_radius(s_clock_center_dot, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_bg_color(s_clock_center_dot, lv_color_hex(0x404040),
-                            0); // Lighter Grey
-  lv_obj_set_style_border_width(s_clock_center_dot, 0,
-                                0); // Removed white border
-  // Center dot shadow for 3D depth
-  lv_obj_set_style_shadow_width(s_clock_center_dot, 15, 0);
+  lv_obj_set_style_bg_color(s_clock_center_dot, lv_color_hex(0xF5CF65), 0); // Metallic Gold
+  lv_obj_set_style_border_width(s_clock_center_dot, 2, 0);
+  lv_obj_set_style_border_color(s_clock_center_dot, lv_color_hex(0x8C6514), 0); // Dark Gold Rim
+  lv_obj_set_style_shadow_width(s_clock_center_dot, 8, 0);
   lv_obj_set_style_shadow_color(s_clock_center_dot, lv_color_black(), 0);
-  lv_obj_set_style_shadow_opa(s_clock_center_dot, LV_OPA_20, 0);
-  lv_obj_set_style_shadow_ofs_x(s_clock_center_dot, 10, 0);
-  lv_obj_set_style_shadow_ofs_y(s_clock_center_dot, 10, 0);
+  lv_obj_set_style_shadow_opa(s_clock_center_dot, LV_OPA_30, 0);
+  lv_obj_set_style_shadow_ofs_x(s_clock_center_dot, 2, 0);
+  lv_obj_set_style_shadow_ofs_y(s_clock_center_dot, 2, 0);
   lv_obj_center(s_clock_center_dot);
 
   if (s_clock_timer == NULL)
@@ -9852,25 +9969,8 @@ static void create_speedometer_ui(void) {
   lv_obj_add_event_cb(s_speedometer_ticks_obj, speedometer_ticks_draw_event_cb, LV_EVENT_DRAW_MAIN, NULL);
   s_speedometer_speed_arc = NULL;
 
-  // [User Request] 빨간색 제한속도 마커 점 (Red Dot, 14x14px)
-  s_speedometer_limit_dot = lv_obj_create(s_speedometer_screen);
-  lv_obj_set_size(s_speedometer_limit_dot, 14, 14);
-  lv_obj_set_style_radius(s_speedometer_limit_dot, LV_RADIUS_CIRCLE, 0);
-  lv_obj_set_style_bg_color(s_speedometer_limit_dot, lv_color_hex(0xFF3344), 0); // Vibrant Red
-  lv_obj_set_style_bg_opa(s_speedometer_limit_dot, LV_OPA_COVER, 0);
-  lv_obj_set_style_border_width(s_speedometer_limit_dot, 1, 0);
-  lv_obj_set_style_border_color(s_speedometer_limit_dot, lv_color_white(), 0);
-  lv_obj_set_style_pad_all(s_speedometer_limit_dot, 0, 0);
-  lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_SCROLLABLE);
-  lv_obj_set_scrollbar_mode(s_speedometer_limit_dot, LV_SCROLLBAR_MODE_OFF);
-  lv_obj_clear_flag(s_speedometer_limit_dot, LV_OBJ_FLAG_CLICKABLE);
-
-  // 초기 60 km/h 제한속도 마커 위치 설정
-  double init_limit_angle = 156.0 + (60.0 / 220.0) * 228.0;
-  double init_limit_rad = init_limit_angle * M_PI / 180.0;
-  int init_dot_x = (int)(194.0 * cos(init_limit_rad));
-  int init_dot_y = (int)(194.0 * sin(init_limit_rad));
-  lv_obj_align(s_speedometer_limit_dot, LV_ALIGN_CENTER, init_dot_x, init_dot_y);
+  // [User Request] 빨간색 제한속도 마커 점 제거 (대신 게이지 블럭을 빨간색으로 표시)
+  s_speedometer_limit_dot = NULL;
 
   s_speedometer_inner_circle = NULL;
   s_speedometer_needle_line = NULL;
