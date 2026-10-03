@@ -5,14 +5,25 @@ setlocal
 if "%IDF_PATH%"=="" (
     if exist "C:\esp\v5.5.3\esp-idf" (
         set "IDF_PATH=C:\esp\v5.5.3\esp-idf"
-        set "IDF_TOOLS_PATH=C:\Espressif"
     ) else if exist "C:\esp" (
         set "IDF_PATH=C:\esp"
+    )
+)
+
+if "%IDF_TOOLS_PATH%"=="" (
+    if exist "C:\Espressif\tools\espidf.constraints.v5.5.txt" (
+        set "IDF_TOOLS_PATH=C:\Espressif\tools"
+    ) else (
         set "IDF_TOOLS_PATH=C:\Espressif"
     )
 ) else (
-    set "IDF_TOOLS_PATH=C:\Espressif"
+    if not exist "%IDF_TOOLS_PATH%\espidf.constraints.v5.5.txt" (
+        if exist "C:\Espressif\tools\espidf.constraints.v5.5.txt" (
+            set "IDF_TOOLS_PATH=C:\Espressif\tools"
+        )
+    )
 )
+set "IDF_PYTHON_CHECK_CONSTRAINTS=0"
 
 if "%PYTHON_EXE%"=="" (
     if exist "C:\Espressif\tools\python\v5.5.3\venv\Scripts\python.exe" (
