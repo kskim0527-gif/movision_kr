@@ -59,8 +59,8 @@ echo ==========================================
 "%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" kr
 if %errorlevel% neq 0 goto :error
 
-:: Force clean build by removing build directory
-if exist build rd /s /q build
+:: Force main.c rebuild with board pin config
+if exist build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj del /f /q build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj
 
 :: Build
 call "%PYTHON_EXE%" "%IDF_PATH%\tools\idf.py" build
@@ -76,8 +76,8 @@ echo ==========================================
 "%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" mp
 if %errorlevel% neq 0 goto :error
 
-:: Force clean build for the second board
-if exist build rd /s /q build
+:: Force main.c rebuild with board pin config
+if exist build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj del /f /q build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj
 
 :: Build
 call "%PYTHON_EXE%" "%IDF_PATH%\tools\idf.py" build
@@ -93,8 +93,8 @@ echo ==========================================
 "%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" ws
 if %errorlevel% neq 0 goto :error
 
-:: Force clean build for the third board
-if exist build rd /s /q build
+:: Force main.c rebuild with board pin config
+if exist build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj del /f /q build\esp-idf\main\CMakeFiles\__idf_main.dir\main.c.obj
 
 :: Build
 call "%PYTHON_EXE%" "%IDF_PATH%\tools\idf.py" build
@@ -103,13 +103,14 @@ if %errorlevel% neq 0 goto :error
 "%PYTHON_EXE%" "%SCRIPT_PACKAGE%" ws
 if %errorlevel% neq 0 goto :error
 
-:: Restore default board config (Movision_kr) for IDE development
-"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" kr
+:: Restore default board config (movision_mp) for IDE development
+"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" mp
 
 echo.
 echo ==========================================
 echo All builds completed successfully!
-echo Results are in the "update" folder.
+echo Results are in the "update" folder:
+dir /b /ad update\update_movision_*
 echo ==========================================
 pause
 exit /b 0

@@ -3,7 +3,7 @@ import sys
 import shutil
 from datetime import datetime
 
-def package(board_name="hd1"):
+def package(board_name="mp"):
     version = datetime.now().strftime("%y%m%d")
     # Get the directory where this script is located
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,11 +31,14 @@ def package(board_name="hd1"):
         os.makedirs(target_dir, exist_ok=True)
         print(f"Created directory: {target_dir}")
 
+    # Find app binary (could be movision_kr.bin or movision.bin)
+    app_bin_name = "movision_kr.bin" if os.path.exists(os.path.join(build_dir, "movision_kr.bin")) else "movision.bin"
+
     files_to_copy = [
         (os.path.join(build_dir, "bootloader", "bootloader.bin"), "bootloader.bin"),
         (os.path.join(build_dir, "partition_table", "partition-table.bin"), "partition-table.bin"),
         (os.path.join(build_dir, "ota_data_initial.bin"), "ota_data_initial.bin"),
-        (os.path.join(build_dir, "movision_kr.bin"), "movision.bin"),
+        (os.path.join(build_dir, app_bin_name), "movision.bin"),
         (os.path.join(build_dir, "storage.bin"), "storage.bin"),
     ]
 
@@ -106,5 +109,5 @@ storage.bin\t0x3b2000
     print(f"\n[SUCCESS] Package created in {target_dir}")
 
 if __name__ == "__main__":
-    board = sys.argv[1] if len(sys.argv) > 1 else "hd1"
+    board = sys.argv[1] if len(sys.argv) > 1 else "mp"
     package(board)

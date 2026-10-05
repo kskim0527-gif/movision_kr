@@ -83,12 +83,12 @@ WS_PINS = """// board_config.h - Waveshare ESP32-S3-Touch-AMOLED-1.8
 #endif
 """
 
-def apply_config(board_type="kr"):
+def apply_config(board_type="mp"):
     b = str(board_type).lower()
-    if b in ["kr", "movision_kr", "r23", "movision_r23", "movision", "default"]:
+    if b in ["kr", "movision_kr", "r23", "movision_r23", "movision"]:
         content = R23_PINS
         target_name = "Movision_kr (R23: LCD CS=9, PCLK=10, DATA=11..14, RST=8, Touch=6,7,4,5)"
-    elif b in ["mp", "movision_mp", "0223", "b0223", "movision_0223", "legacy"]:
+    elif b in ["mp", "movision_mp", "0223", "b0223", "movision_0223", "legacy", "default"]:
         content = B0223_PINS
         target_name = "movision_mp (0223: LCD CS=14, PCLK=7, DATA=8,13,6,12, RST=9, Touch=10,17,11,15)"
     elif b in ["ws", "waveshare", "hd1", "movision_ws"]:
@@ -104,7 +104,7 @@ def apply_config(board_type="kr"):
     return True
 
 if __name__ == "__main__":
-    board = sys.argv[1] if len(sys.argv) > 1 else "r23"
+    board = sys.argv[1] if len(sys.argv) > 1 else "mp"
     apply_config(board)
 
 
