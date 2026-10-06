@@ -1,6 +1,6 @@
-모델명 : MOVISION-KR
-F/W : 261005
-날짜 : 2026-10-05 21:19:41
+모델명 : MOVISION-MP
+F/W : 261006
+날짜 : 2026-10-06 06:54:41
 
 [Flash Addresses]
 bootloader.bin	0x0
