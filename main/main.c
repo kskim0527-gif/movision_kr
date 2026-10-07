@@ -834,8 +834,7 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
   // 미도달 트랙 220 km/h 끝단 라운드 캡 마감
   draw_speed_cap(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, END_ANGLE, track_bg_color);
 
-  // [User Request] 0 km/h 정차 시에도 가장 하단의 하늘색 원 표기
-  draw_speed_cap(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, START_ANGLE, lv_color_hex(0x00D2FF));
+  // [User Request] 정차 시(0 km/h) 하늘색 원 제거 (주행 시에만 시작단 표시)
 
   // --- [2. 활성 속도 바] ---
   if (current_speed > 0) {
@@ -853,9 +852,8 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
     int angle_100 = (int)(START_ANGLE + (100.0f / 220.0f) * TOTAL_ANGLE + 0.5f) % 360;
     int angle_150 = (int)(START_ANGLE + (150.0f / 220.0f) * TOTAL_ANGLE + 0.5f) % 360;
 
-    uint16_t cap_outer_radius = BAR_OUTER_RADIUS;
-    lv_coord_t cap_width = BAR_WIDTH;
-    lv_color_t cap_color = lv_color_hex(0x00D2FF);
+    // 0 km/h 시작단 라운드 캡 (주행 시 0~100km 구간 하늘색 시작단 마감, 정차 시에는 미표시)
+    draw_speed_cap(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, START_ANGLE, lv_color_hex(0x00D2FF));
 
     if (is_overspeed) {
       int angle_limit = (int)(START_ANGLE + ((float)limit_val / 220.0f) * TOTAL_ANGLE + 0.5f) % 360;
@@ -880,26 +878,17 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
 
       // 2. [limit_val ~ current_speed 과속 구간]: 빨강색 (외경 214px, 두께 36px)
       draw_speed_arc_segment(draw_ctx, &center, RED_BAR_OUTER_RADIUS, RED_BAR_WIDTH, angle_limit, active_end_angle, lv_color_hex(0xFF2233));
-      cap_outer_radius = RED_BAR_OUTER_RADIUS;
-      cap_width = RED_BAR_WIDTH;
-      cap_color = lv_color_hex(0xFF2233);
     } else {
       // 일반 주행 (카메라 없는 구간 또는 제한속도 이내 주행)
       // [User Request] 100km 넘으면 0~100 하늘색, 100km 넘는 구간만 주황색 / 150km 넘으면 100~150 주황색, 150~220 빨강색
       if (current_speed <= 100) {
         // [0 ~ current_speed]: 하늘색
         draw_speed_arc_segment(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, START_ANGLE, active_end_angle, lv_color_hex(0x00D2FF));
-        cap_outer_radius = BAR_OUTER_RADIUS;
-        cap_width = BAR_WIDTH;
-        cap_color = lv_color_hex(0x00D2FF);
       } else if (current_speed <= 150) {
         // [0 ~ 100]: 하늘색
         draw_speed_arc_segment(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, START_ANGLE, angle_100, lv_color_hex(0x00D2FF));
         // [100 ~ current_speed]: 주황색 (100km/h 넘는 구간만 주황색, 외경 214px, 안쪽 2px 이동)
         draw_speed_arc_segment(draw_ctx, &center, ORANGE_BAR_OUTER_RADIUS, ORANGE_BAR_WIDTH, angle_100, active_end_angle, lv_color_hex(0xFF8800));
-        cap_outer_radius = ORANGE_BAR_OUTER_RADIUS;
-        cap_width = ORANGE_BAR_WIDTH;
-        cap_color = lv_color_hex(0xFF8800);
       } else {
         // [0 ~ 100]: 하늘색
         draw_speed_arc_segment(draw_ctx, &center, BAR_OUTER_RADIUS, BAR_WIDTH, START_ANGLE, angle_100, lv_color_hex(0x00D2FF));
@@ -907,14 +896,10 @@ static void speedometer_ticks_draw_event_cb(lv_event_t * e) {
         draw_speed_arc_segment(draw_ctx, &center, ORANGE_BAR_OUTER_RADIUS, ORANGE_BAR_WIDTH, angle_100, angle_150, lv_color_hex(0xFF8800));
         // [150 ~ current_speed]: 빨강색 (150km/h 넘는 구간만 빨강색, 외경 214px, 두께 36px)
         draw_speed_arc_segment(draw_ctx, &center, RED_BAR_OUTER_RADIUS, RED_BAR_WIDTH, angle_150, active_end_angle, lv_color_hex(0xFF2233));
-        cap_outer_radius = RED_BAR_OUTER_RADIUS;
-        cap_width = RED_BAR_WIDTH;
-        cap_color = lv_color_hex(0xFF2233);
       }
     }
 
-    // [User Request] 상단(현재 속도 끝단) 라운드 캡 마감
-    draw_speed_cap(draw_ctx, &center, cap_outer_radius, cap_width, active_end_angle, cap_color);
+    // [User Request] 상단(현재 속도 끝단) 라운드 제거 (플랫 마감)
   }
 
   // --- [3. 제한속도 마커 (빨간색 점)] ---
