@@ -1,6 +1,6 @@
 모델명 : MOVISION-MP
-F/W : 261007
-날짜 : 2026-10-07 14:02:51
+F/W : 261027
+날짜 : 2026-10-27 11:43:48
 
 [Flash Addresses]
 bootloader.bin	0x0
