@@ -103,8 +103,8 @@ if %errorlevel% neq 0 goto :error
 "%PYTHON_EXE%" "%SCRIPT_PACKAGE%" ws
 if %errorlevel% neq 0 goto :error
 
-:: Restore default board config (movision_mp) for IDE development
-"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" mp
+:: Restore default board config (movision_kr) for IDE development
+"%PYTHON_EXE%" "%SCRIPT_APPLY_PIN%" kr
 
 echo.
 echo ==========================================

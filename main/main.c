@@ -414,6 +414,9 @@ static uint8_t s_setting_page_index = 1; // 1 or 2
 
 // Forward declarations
 static void switch_display_mode(display_mode_t new_mode);
+static TaskHandle_t s_ble_host_task_handle = NULL;   // [Fix] NimBLE 호스트 태스크 핸들
+static volatile int s_pending_mode = -1;             // [Fix] BLE 컨텍스트에서 요청된 지연 화면전환
+static volatile bool s_pending_mode_manual = false;
 static void update_display_mode_ui(display_mode_t mode);
 static void apply_hw_brightness(uint8_t level);
 void update_heartbeat_lvgl(void);
@@ -758,6 +761,8 @@ static lv_obj_t *s_speedometer_sec_cur_value_label = NULL; // 현재속도 숫�
 static lv_obj_t *s_speedometer_sec_slash_label = NULL;     // "/" 구분자
 static lv_obj_t *s_speedometer_sec_avr_value_label = NULL; // 평균속도 숫자 (font_ORB_60)
 static uint8_t s_speedometer_avr_speed_val = 0;            // 최근 수신된 구간평균속도
+static volatile uint32_t s_last_section_bit_ms = 0;        // [Fix] 마지막 구간단속(0x20) Safety 수신 시각(ms)
+#define SECTION_BIT_HOLD_MS 5000                           // 구간 비트 수신 후 AVG=0 무시 유지시간
 
 static uint8_t s_speedometer_safety_tt_val = 0;
 static lv_timer_t *s_speedometer_overspeed_timer = NULL;
@@ -3390,7 +3395,12 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
         // [Speedometer Option] 모드 0(아날로그) 및 모드 1(디지털) 모두 현재속도는 계속 표시 유지
         if (s_speedometer_speed_label) {
           if (s_speedometer_option == 0) {
-            lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            // [Fix] 구간단속 중(평균속도 표시 중)에는 대형 단독 속도 숨김 유지 (듀얼 표시와 토글 방지)
+            if (s_speedometer_avr_speed_val == 0) {
+              lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            }
             if (s_speedometer_unit_label) lv_obj_clear_flag(s_speedometer_unit_label, LV_OBJ_FLAG_HIDDEN);
           } else {
             if (s_speedometer_avr_speed_val == 0) {
@@ -3562,7 +3572,12 @@ static void update_safety_image_for_data(const safety_data_entry_t *entry,
         // [Speedometer Option] 모드 0(아날로그) 및 모드 1(디지털) 모두 현재속도는 계속 표시 유지
         if (s_speedometer_speed_label) {
           if (s_speedometer_option == 0) {
-            lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            // [Fix] 구간단속 중(평균속도 표시 중)에는 대형 단독 속도 숨김 유지 (듀얼 표시와 토글 방지)
+            if (s_speedometer_avr_speed_val == 0) {
+              lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            } else {
+              lv_obj_add_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+            }
             if (s_speedometer_unit_label) lv_obj_clear_flag(s_speedometer_unit_label, LV_OBJ_FLAG_HIDDEN);
           } else {
             if (s_speedometer_avr_speed_val == 0) {
@@ -3832,12 +3847,18 @@ static void safety_drive(uint8_t start, uint8_t id, uint8_t commend,
   // data1 == 0: 모든 안전운행 정보를 화면에서 지운다
   if (data1 == 0x00) {
     ESP_LOGI(TAG, "Safety_DRV: data1=0 received, requesting clear");
+    s_last_section_bit_ms = 0;
     request_clear_display(0x02);
     return;
   }
 
   const safety_data_entry_t *best_entry = NULL;
   uint8_t highest_priority = 255;
+
+  // [Fix] 구간단속 비트(0x20) 수신 시각 기록 (구간 중 AVG=0 무시 판정용)
+  if (data1 & 0x20) {
+    s_last_section_bit_ms = (uint32_t)(esp_timer_get_time() / 1000);
+  }
 
   // data1에 포함된 비트 중 가장 우선순위가 높은 항목을 찾는다
   for (int i = 0; i < 8; i++) {
@@ -3846,12 +3867,24 @@ static void safety_drive(uint8_t start, uint8_t id, uint8_t commend,
       const safety_data_entry_t *entry =
           find_safety_image_entry(start, id, commend, data_length, bit);
       if (entry != NULL) {
+        // [Fix] 제한속도(data2)=0 이면 숫자 표지(_tt) 아이콘은 제외 ("30" 오표시 방지)
+        if (data2 == 0 && strstr(entry->image_filename, "tt") != NULL) {
+          continue;
+        }
         if (entry->priority < highest_priority) {
           highest_priority = entry->priority;
           best_entry = entry;
         }
       }
     }
+  }
+
+  // [Fix] 구간단속(0x20) 비트가 포함되면 구간단속 아이콘/판정을 최우선 적용
+  // (앱은 구간단속을 0x21 = section|speed 로 송신 -> speed 아이콘 및 구간 알람 오판정 방지)
+  if ((data1 & 0x20) && data2 != 0) {
+    const safety_data_entry_t *sec =
+        find_safety_image_entry(start, id, commend, data_length, 0x20);
+    if (sec != NULL) best_entry = sec;
   }
 
   if (best_entry == NULL) {
@@ -3863,6 +3896,10 @@ static void safety_drive(uint8_t start, uint8_t id, uint8_t commend,
                "start=0x%02X id=0x%02X "
                "cmd=0x%02X dlen=0x%02X data1=0x%02X",
                start, id, commend, data_length, data1);
+      return;
+    }
+    if (data2 == 0 && strstr(best_entry->image_filename, "tt") != NULL) {
+      ESP_LOGW(TAG, "Safety_DRV: data1=0x%02X limit=0, skip numeric sign", data1);
       return;
     }
   }
@@ -4351,7 +4388,12 @@ static void update_clear_display(uint8_t data1) {
         s_guide_sub_mode == GUIDE_SUB_SPEEDOMETER) {
       if (s_speedometer_speed_label != NULL) {
         if (s_speedometer_option == 0) {
-          lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+          // [Fix] 구간단속 중에는 대형 단독 속도 숨김 유지
+          if (s_speedometer_avr_speed_val == 0) {
+            lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+          } else {
+            lv_obj_add_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
+          }
         } else {
           if (s_speedometer_avr_speed_val == 0) {
             lv_obj_clear_flag(s_speedometer_speed_label, LV_OBJ_FLAG_HIDDEN);
@@ -4954,6 +4996,14 @@ static void update_speedometer_section_control_ui(void) {
 // NOTE: This function should only be called
 // from LVGL handler task
 static void update_speed_label(uint8_t data1, uint8_t speed) {
+  // [Fix] 구간단속 진행 중(최근 5초 내 0x20 비트 Safety 수신) 앱이 AVG=0을 보내면 무시
+  // (필드로그 merged_log 48243행: 구간 중간 AVG=0 -> 듀얼 표시 해제되는 문제)
+  if (data1 == 0x01 && speed == 0 && s_speedometer_avr_speed_val > 0 &&
+      s_last_section_bit_ms != 0 &&
+      ((uint32_t)(esp_timer_get_time() / 1000) - s_last_section_bit_ms) < SECTION_BIT_HOLD_MS) {
+    ESP_LOGI(TAG, "AVG=0 ignored during active section (keep %u)", s_speedometer_avr_speed_val);
+    return;
+  }
   if (data1 == 0x00) {
     s_current_speed = speed;
 
@@ -7823,6 +7873,15 @@ static void switch_display_mode(display_mode_t new_mode) {
     return;
   }
 
+  // [Fix] NimBLE 호스트 태스크(스택 4KB)에서 호출 시 화면 전환(LVGL 재구성/이미지 디코딩)을
+  // 직접 수행하면 스택 오버플로/힙 손상으로 리부트됨 -> 요청만 기록하고 LVGL 태스크에서 처리
+  if (s_ble_host_task_handle != NULL &&
+      xTaskGetCurrentTaskHandle() == s_ble_host_task_handle) {
+    s_pending_mode_manual = s_is_manual_mode_switch;
+    s_pending_mode = (int)new_mode;
+    return;
+  }
+
   // [Fix] 부트 모드 재진입 차단: 최초 부팅 이후에는 다시는 로고/QR 화면으로
   // 돌아갈 수 없음
   if (new_mode == DISPLAY_MODE_BOOT && s_current_mode != DISPLAY_MODE_BOOT) {
@@ -8746,6 +8805,17 @@ static void lvgl_handler_task(void *arg) {
 
     // 하트비트 업데이트 (루프 시작 시)
     update_heartbeat_lvgl();
+
+    // [Fix] BLE 컨텍스트에서 지연된 화면 전환 처리 (LVGL 태스크 스택에서 실행)
+    if (s_pending_mode >= 0) {
+      display_mode_t m = (display_mode_t)s_pending_mode;
+      bool manual = s_pending_mode_manual;
+      s_pending_mode = -1;
+      bool prev_manual = s_is_manual_mode_switch;
+      s_is_manual_mode_switch = manual;
+      switch_display_mode(m);
+      s_is_manual_mode_switch = prev_manual;
+    }
 
     // 1. LVGL Timer Handler (Smallest Lock Window)
     LVGL_LOCK();
@@ -9767,6 +9837,7 @@ static void ble_mp_on_sync(void) {
 
 static void ble_mp_host_task(void *param) {
   ESP_LOGI(TAG, "NimBLE Host Task Started");
+  s_ble_host_task_handle = xTaskGetCurrentTaskHandle();
   nimble_port_run();
   nimble_port_freertos_deinit();
 }
